@@ -18,3 +18,4 @@ CREATE TABLE IF NOT EXISTS blogs (
 CREATE INDEX IF NOT EXISTS idx_blogs_category ON blogs(category);
 CREATE INDEX IF NOT EXISTS idx_blogs_published_at ON blogs(published_at DESC);
 CREATE INDEX IF NOT EXISTS idx_blogs_views ON blogs(views DESC);
+CREATE INDEX IF NOT EXISTS idx_blogs_title ON blogs(title);
