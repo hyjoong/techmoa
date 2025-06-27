@@ -15,8 +15,48 @@ export interface Blog {
   thumbnail_url: string | null;
   external_url: string;
   views: number;
+  blog_type: "company" | "personal";
   created_at: string;
   updated_at: string;
+}
+
+// 사용 가능한 블로그 목록 조회 (기업/개인별)
+export async function fetchAvailableBlogs() {
+  try {
+    const { data, error } = await supabase
+      .from("blogs")
+      .select("author, blog_type")
+      .order("author");
+
+    if (error) {
+      throw new Error(`블로그 목록 조회 실패: ${error.message}`);
+    }
+
+    // 중복 제거 및 그룹화
+    const blogMap = new Map<
+      string,
+      { author: string; blog_type: "company" | "personal" }
+    >();
+
+    data?.forEach((item) => {
+      if (!blogMap.has(item.author)) {
+        blogMap.set(item.author, {
+          author: item.author,
+          blog_type: item.blog_type,
+        });
+      }
+    });
+
+    const blogs = Array.from(blogMap.values());
+
+    return {
+      companies: blogs.filter((blog) => blog.blog_type === "company"),
+      individuals: blogs.filter((blog) => blog.blog_type === "personal"),
+    };
+  } catch (error) {
+    console.error("블로그 목록 조회 실패:", error);
+    return { companies: [], individuals: [] };
+  }
 }
 
 // 블로그 목록 조회 (서버 필터링 + 페이징)
@@ -25,13 +65,25 @@ export async function fetchBlogs({
   limit = 12,
   search,
   sortBy = "published_at",
+  blogType = "company",
+  author,
 }: {
   page?: number;
   limit?: number;
   search?: string;
-  sortBy?: "published_at" | "title" | "created_at" | "views";
+  sortBy?: "published_at" | "title" | "views";
+  blogType?: "company" | "personal";
+  author?: string;
 } = {}) {
   let query = supabase.from("blogs").select("*", { count: "exact" });
+
+  // 블로그 타입 필터
+  query = query.eq("blog_type", blogType);
+
+  // 특정 작성자 필터
+  if (author && author.trim()) {
+    query = query.eq("author", author.trim());
+  }
 
   // 검색 필터 (제목, 작성자, 태그에서 검색)
   if (search && search.trim()) {
