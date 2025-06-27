@@ -49,7 +49,7 @@ export const metadata: Metadata = {
     siteName: "Techmoa",
     images: [
       {
-        url: "/og-image.png",
+        url: "/ogImage.png",
         width: 1200,
         height: 630,
         alt: "Techmoa - 기술 블로그 모음집",
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     title: "Techmoa - 기술 블로그 모음집",
     description:
       "국내외 IT·개발 기술 블로그의 최신 포스트를 Techmoa에서 한눈에 확인하세요.",
-    images: ["/og-image.png"],
+    images: ["/ogImage.png"],
   },
   viewport: {
     width: "device-width",
