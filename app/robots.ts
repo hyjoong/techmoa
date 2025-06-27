@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
       allow: "/",
       disallow: ["/api/", "/admin/", "/_next/", "/scripts/"],
     },
-    sitemap: "https://techgom.vercel.app/sitemap.xml",
-    host: "https://techgom.vercel.app",
+    sitemap: "https://techmoa.dev/sitemap.xml",
+    host: "https://techmoa.dev",
   };
 }
