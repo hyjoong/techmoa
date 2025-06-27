@@ -1,0 +1,204 @@
+#!/usr/bin/env node
+
+/**
+ * RSS 피드 유효성 검사 스크립트
+ *
+ * 사용법:
+ *   node scripts/validate-rss.js                    # 모든 피드 검사
+ *   node scripts/validate-rss.js --url <URL>        # 특정 URL만 검사
+ *   node scripts/validate-rss.js --verbose          # 상세 정보 출력
+ */
+
+const fs = require("fs");
+const axios = require("axios");
+const xml2js = require("xml2js");
+
+// 커맨드 라인 인수 파싱
+const args = process.argv.slice(2);
+const verbose = args.includes("--verbose");
+const urlIndex = args.indexOf("--url");
+const specificUrl = urlIndex !== -1 ? args[urlIndex + 1] : null;
+
+// RSS 피드 목록에서 URL 추출
+function extractRssUrls() {
+  try {
+    const content = fs.readFileSync("scripts/rss-crawler.js", "utf8");
+    const rssFeedsMatch = content.match(/const RSS_FEEDS = \[([\s\S]*?)\];/);
+
+    if (!rssFeedsMatch) {
+      throw new Error("RSS_FEEDS 배열을 찾을 수 없습니다.");
+    }
+
+    const feedsContent = rssFeedsMatch[1];
+    const urlMatches = feedsContent.match(/url:\s*["']([^"']+)["']/g);
+
+    if (!urlMatches) {
+      throw new Error("RSS URL을 찾을 수 없습니다.");
+    }
+
+    return urlMatches.map((match) => {
+      const url = match.match(/url:\s*["']([^"']+)["']/)[1];
+      return url;
+    });
+  } catch (error) {
+    console.error("❌ RSS 피드 URL 추출 실패:", error.message);
+    process.exit(1);
+  }
+}
+
+// RSS 피드 유효성 검사
+async function validateRssFeed(url) {
+  try {
+    if (verbose) {
+      console.log(`🔍 검사 중: ${url}`);
+    }
+
+    const response = await axios.get(url, {
+      timeout: 10000,
+      headers: {
+        "User-Agent": "Mozilla/5.0 (compatible; RSS-Validator/1.0)",
+      },
+    });
+
+    if (response.status !== 200) {
+      return {
+        url,
+        valid: false,
+        error: `HTTP ${response.status}: ${response.statusText}`,
+      };
+    }
+
+    const contentType = response.headers["content-type"] || "";
+    if (
+      !contentType.includes("xml") &&
+      !contentType.includes("rss") &&
+      !contentType.includes("atom")
+    ) {
+      return {
+        url,
+        valid: false,
+        error: `잘못된 Content-Type: ${contentType}`,
+      };
+    }
+
+    // XML 파싱 테스트
+    try {
+      const parser = new xml2js.Parser();
+      const result = await parser.parseStringPromise(response.data);
+
+      // RSS/Atom 구조 확인
+      const hasRssStructure = result.rss || result.feed;
+      if (!hasRssStructure) {
+        return {
+          url,
+          valid: false,
+          error: "유효한 RSS/Atom 구조가 아닙니다.",
+        };
+      }
+
+      return {
+        url,
+        valid: true,
+        status: response.status,
+        contentType: contentType,
+        structure: result.rss ? "RSS" : "Atom",
+      };
+    } catch (parseError) {
+      return {
+        url,
+        valid: false,
+        error: `XML 파싱 실패: ${parseError.message}`,
+      };
+    }
+  } catch (error) {
+    return {
+      url,
+      valid: false,
+      error: error.message,
+    };
+  }
+}
+
+// 메인 실행 함수
+async function main() {
+  try {
+    console.log("🚀 RSS 피드 유효성 검사 시작...\n");
+
+    let urls;
+    if (specificUrl) {
+      urls = [specificUrl];
+      console.log(`📊 특정 URL 검사: ${specificUrl}\n`);
+    } else {
+      urls = extractRssUrls();
+      console.log(`📊 총 ${urls.length}개의 RSS 피드를 검사합니다.\n`);
+    }
+
+    const results = [];
+    let validCount = 0;
+    let invalidCount = 0;
+
+    for (const url of urls) {
+      const result = await validateRssFeed(url);
+      results.push(result);
+
+      if (result.valid) {
+        validCount++;
+        console.log(`✅ ${url}`);
+        if (verbose && result.structure) {
+          console.log(
+            `   └─ 구조: ${result.structure}, Content-Type: ${result.contentType}`
+          );
+        }
+      } else {
+        invalidCount++;
+        console.log(`❌ ${url} - ${result.error}`);
+      }
+
+      // API 부하 방지를 위한 간격
+      if (urls.length > 1) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    }
+
+    console.log("\n📊 검사 결과:");
+    console.log(`✅ 유효한 피드: ${validCount}개`);
+    console.log(`❌ 유효하지 않은 피드: ${invalidCount}개`);
+
+    // 실패한 피드가 있으면 상세 정보 출력
+    const invalidFeeds = results.filter((r) => !r.valid);
+    if (invalidFeeds.length > 0) {
+      console.log("\n❌ 유효하지 않은 피드 상세:");
+      invalidFeeds.forEach((feed) => {
+        console.log(`  - ${feed.url}: ${feed.error}`);
+      });
+    }
+
+    // 결과를 파일로 저장
+    fs.writeFileSync(
+      "rss-validation-results.json",
+      JSON.stringify(results, null, 2)
+    );
+    console.log(
+      "\n💾 검사 결과가 rss-validation-results.json에 저장되었습니다."
+    );
+
+    // 실패한 피드가 있으면 에러로 종료
+    if (invalidCount > 0) {
+      console.log("\n❌ 일부 RSS 피드가 유효하지 않습니다.");
+      process.exit(1);
+    } else {
+      console.log("\n🎉 모든 RSS 피드가 유효합니다!");
+      process.exit(0);
+    }
+  } catch (error) {
+    console.error("❌ 검사 중 오류 발생:", error.message);
+    process.exit(1);
+  }
+}
+
+// 스크립트 실행
+if (require.main === module) {
+  main();
+}
+
+module.exports = { validateRssFeed, extractRssUrls };
