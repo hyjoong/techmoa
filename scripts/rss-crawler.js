@@ -3,88 +3,164 @@ dotenv.config();
 import { createClient } from "@supabase/supabase-js";
 import Parser from "rss-parser";
 
-// RSS 피드 목록
+/**
+ * RSS 피드 크롤러
+ *
+ * 새로운 블로그를 추가하려면:
+ * 1. RSS_FEEDS 배열에 다음 형식으로 추가:
+ *    { name: "블로그명", url: "RSS_URL", type: "company" | "personal" }
+ * 2. RSS 피드가 정상 작동하는지 확인
+ * 3. 블로그 타입을 올바르게 설정 (company: 기업, personal: 개인)
+ * 4. 중복되지 않는 블로그명 사용
+ *
+ */
+
+// RSS 피드 목록 (기업/개인 구분)
 const RSS_FEEDS = [
-  { name: "토스 블로그", url: "https://toss.tech/rss.xml" },
-  { name: "무신사 블로그", url: "https://medium.com/feed/musinsa-tech" },
-  { name: "네이버 블로그", url: "https://d2.naver.com/d2.atom" },
+  // 기존 기업 블로그
+  { name: "토스 블로그", url: "https://toss.tech/rss.xml", type: "company" },
+  {
+    name: "무신사 블로그",
+    url: "https://medium.com/feed/musinsa-tech",
+    type: "company",
+  },
   {
     name: "마켓 컬리 블로그",
     url: "https://helloworld.kurly.com/feed.xml",
+    type: "company",
   },
   {
     name: "우아한 형제들 블로그",
     url: "https://techblog.woowahan.com/feed/",
-  },
-  {
-    name: "카카오 엔터 블로그",
-    url: "https://tech.kakaoenterprise.com/feed",
+    type: "company",
   },
   {
     name: "데브시스터즈 블로그",
     url: "https://tech.devsisters.com/rss.xml",
+    type: "company",
   },
   {
     name: "당근 블로그",
     url: "https://medium.com/feed/daangn",
+    type: "company",
   },
   {
     name: "쏘카 블로그",
     url: "https://tech.socarcorp.kr/feed",
+    type: "company",
   },
   {
     name: "뱅크샐러드 블로그",
     url: "https://blog.banksalad.com/rss.xml",
-  },
-  {
-    name: "신은선님 블로그",
-    url: "https://eunsonny.github.io/rss.xml",
-  },
-  {
-    name: "정현수님 블로그",
-    url: "https://junghyeonsu.com/rss.xml",
-  },
-  {
-    name: "문동욱님 블로그",
-    url: "https://evan-moon.github.io/feed.xml",
+    type: "company",
   },
   {
     name: "카카오 블로그",
     url: "https://tech.kakao.com/feed/",
-  },
-  {
-    name: "정봉찬님 블로그",
-    url: "https://devwqc.github.io/rss.xml",
-  },
-  {
-    name: "지그재그님 블로그",
-    url: "https://wormwlrm.github.io/feed",
-  },
-  {
-    name: "테오님 블로그",
-    url: "https://api.velog.io/rss/@teo",
-  },
-  {
-    name: "손수림님 블로그",
-    url: "https://api.velog.io/rss/@surim014",
-  },
-  {
-    name: "왓에버 블로그",
-    url: "https://api.velog.io/rss/@whatever",
+    type: "company",
   },
   {
     name: "카카오페이 기술 블로그",
     url: "https://tech.kakaopay.com/rss",
+    type: "company",
+  },
+
+  // 새로 추가된 기업 블로그
+  { name: "29CM", url: "https://medium.com/feed/29cm", type: "company" },
+  {
+    name: "에잇퍼센트",
+    url: "https://8percent.github.io/feed.xml",
+    type: "company",
   },
   {
-    name: "우혁님 블로그",
-    url: "https://api.velog.io/rss/@woogur29",
+    name: "올리브영 기술블로그",
+    url: "https://oliveyoung.tech/rss.xml",
+    type: "company",
+  },
+  {
+    name: "다나와",
+    url: "https://danawalab.github.io/feed.xml",
+    type: "company",
+  },
+  {
+    name: "데이블",
+    url: "https://teamdable.github.io/techblog/feed.xml",
+    type: "company",
+  },
+  {
+    name: "스타일쉐어",
+    url: "https://medium.com/feed/styleshare",
+    type: "company",
+  },
+  { name: "왓챠", url: "https://medium.com/feed/watcha", type: "company" },
+  {
+    name: "요기요",
+    url: "https://medium.com/feed/deliverytechkorea",
+    type: "company",
+  },
+  {
+    name: "우아한형제들",
+    url: "https://woowabros.github.io/feed.xml",
+    type: "company",
+  },
+  {
+    name: "원티드",
+    url: "https://medium.com/feed/wantedjobs",
+    type: "company",
+  },
+  {
+    name: "이스트소프트",
+    url: "https://blog.est.ai/feed.xml",
+    type: "company",
+  },
+  { name: "직방", url: "https://medium.com/feed/zigbang", type: "company" },
+  {
+    name: "쿠팡",
+    url: "https://medium.com/feed/coupang-tech",
+    type: "company",
+  },
+  {
+    name: "클래스101",
+    url: "https://medium.com/feed/class101",
+    type: "company",
+  },
+  {
+    name: "하이퍼커넥트",
+    url: "https://hyperconnect.github.io/feed.xml",
+    type: "company",
+  },
+  {
+    name: "휴먼스케이프",
+    url: "https://medium.com/feed/humanscape-tech",
+    type: "company",
+  },
+
+  // 개인 블로그
+  {
+    name: "정현수님 블로그",
+    url: "https://junghyeonsu.com/rss.xml",
+    type: "personal",
+  },
+  {
+    name: "문동욱님 블로그",
+    url: "https://evan-moon.github.io/feed.xml",
+    type: "personal",
+  },
+  {
+    name: "테오님 블로그",
+    url: "https://api.velog.io/rss/@teo",
+    type: "personal",
+  },
+  {
+    name: "손수림님 블로그",
+    url: "https://api.velog.io/rss/@surim014",
+    type: "personal",
   },
 ];
 
 // Supabase 클라이언트 초기화
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !supabaseServiceKey) {
   console.error("❌ Supabase URL 또는 Service Role Key가 설정되지 않았습니다.");
@@ -197,7 +273,7 @@ async function parseFeed(feedConfig) {
           ? new Date(item.pubDate).toISOString()
           : new Date().toISOString(),
         thumbnail_url: extractThumbnail(item),
-        tags: [feedConfig.name], // 카테고리 대신 블로그명을 태그로 사용
+        blog_type: feedConfig.type,
       };
 
       articles.push(article);
