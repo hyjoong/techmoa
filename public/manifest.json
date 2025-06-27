@@ -1,6 +1,6 @@
 {
-  "name": "Techgom - 기술 블로그 모음집",
-  "short_name": "Techgom",
+  "name": "Techmoa - 기술 블로그 모음집",
+  "short_name": "Techmoa",
   "description": "국내 주요 기업과 개발자들의 기술 블로그를 한곳에서 모아보세요.",
   "start_url": "/",
   "display": "standalone",
