@@ -1,13 +1,18 @@
 {
-  "name": "my-v0-project",
-  "version": "0.1.0",
-  "private": true,
+  "name": "techmoa",
+  "version": "1.0.0",
+  "description": "국내 주요 기업과 개발자들의 기술 블로그를 한곳에서 모아보는 아그리게이터 서비스",
+  "private": false,
   "type": "module",
   "scripts": {
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "validate-rss": "node scripts/validate-rss.js",
+    "validate-rss:verbose": "node scripts/validate-rss.js --verbose",
+    "test:rss": "node scripts/validate-rss.js",
+    "rss-stats": "node scripts/rss-stats.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -40,6 +45,7 @@
     "@radix-ui/react-tooltip": "1.1.6",
     "@supabase/supabase-js": "latest",
     "autoprefixer": "^10.4.20",
+    "axios": "^1.10.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
@@ -61,6 +67,7 @@
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.6",
+    "xml2js": "^0.6.2",
     "zod": "^3.24.1"
   },
   "devDependencies": {
