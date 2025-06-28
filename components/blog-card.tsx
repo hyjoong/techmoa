@@ -56,7 +56,7 @@ export function BlogCard({ blog }: BlogCardProps) {
 
   return (
     <Card
-      className="group h-full flex flex-col cursor-pointer card-hover border-0 shadow-lg hover:shadow-xl bg-card/50 backdrop-blur-sm"
+      className="group h-full flex flex-col cursor-pointer card-hover border border-border/20 shadow-lg hover:shadow-xl bg-card dark:bg-card/80 backdrop-blur-sm dark:backdrop-blur-none rounded-xl overflow-hidden"
       onClick={handleCardClick}
     >
       <CardHeader className="p-0">
@@ -117,7 +117,7 @@ export function BlogCard({ blog }: BlogCardProps) {
           {blog.summary || "요약이 없습니다."}
         </p>
 
-        <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border/50">
+        <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border/30 dark:border-border/50">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
               <Calendar className="h-3 w-3" />

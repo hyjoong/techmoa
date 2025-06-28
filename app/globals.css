@@ -72,7 +72,7 @@ body {
     /* 다크 모드 - 딥 블루 테마 */
     --background: 222 84% 4.9%;
     --foreground: 210 40% 98%;
-    --card: 222 84% 4.9%;
+    --card: 217 33% 17%;
     --card-foreground: 210 40% 98%;
     --popover: 222 84% 4.9%;
     --popover-foreground: 210 40% 98%;
@@ -184,6 +184,11 @@ body {
 
 .card-hover:hover {
   @apply shadow-xl shadow-primary/10 -translate-y-2;
+}
+
+.dark .card-hover:hover {
+  @apply shadow-xl shadow-primary/20 -translate-y-2;
+  background-color: hsl(217 33% 20%);
 }
 
 /* Glass morphism effect */
