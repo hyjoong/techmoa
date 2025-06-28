@@ -266,7 +266,6 @@ async function parseFeed(feedConfig) {
 
       articles.push(article);
     }
-
     console.log(`✅ ${feedConfig.name}: ${articles.length}개 글 파싱 완료`);
     return articles;
   } catch (error) {
