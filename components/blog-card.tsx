@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Calendar, Eye, User } from "lucide-react";
 import Image from "next/image";
 import { incrementViews, type Blog } from "@/lib/supabase";
-import { CompanyLogo } from "./company-logo";
+// import { CompanyLogo } from "./company-logo";
 
 interface BlogCardProps {
   blog: Blog;
@@ -94,11 +94,12 @@ export function BlogCard({ blog }: BlogCardProps) {
             }`}
           >
             {blog.blog_type === "company" ? (
-              <CompanyLogo
-                companyName={blog.author}
-                size={16}
-                className="flex-shrink-0"
-              />
+              // <CompanyLogo
+              //   companyName={blog.author}
+              //   size={16}
+              //   className="flex-shrink-0"
+              // />
+              <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             ) : (
               <User className="h-4 w-4 text-primary flex-shrink-0" />
             )}
