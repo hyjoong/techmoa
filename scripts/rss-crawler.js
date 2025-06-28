@@ -125,7 +125,7 @@ const RSS_FEEDS = [
   },
   {
     name: "스벨트전도사",
-    url: "https://api.velog.io/rss/@k-svelte-masterr",
+    url: "https://api.velog.io/rss/@k-svelte-master",
     type: "personal",
   },
   {
