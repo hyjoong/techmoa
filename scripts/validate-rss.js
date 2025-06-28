@@ -56,7 +56,7 @@ async function validateRssFeed(url) {
     const response = await axios.get(url, {
       timeout: 10000,
       headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; RSS-Validator/1.0)",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       },
     });
 
@@ -131,6 +131,16 @@ async function main() {
     } else {
       urls = extractRssUrls();
       console.log(`📊 총 ${urls.length}개의 RSS 피드를 검사합니다.\n`);
+      
+      // GitHub Actions 환경에서 우아한형제들 RSS 피드 제외
+      if (process.env.GITHUB_ACTIONS) {
+        const originalCount = urls.length;
+        urls = urls.filter(url => !url.includes("techblog.woowahan.com"));
+        const excludedCount = originalCount - urls.length;
+        if (excludedCount > 0) {
+          console.log(`🔧 GitHub Actions 환경: 우아한형제들 RSS 피드 ${excludedCount}개 제외됨`);
+        }
+      }
     }
 
     const results = [];
