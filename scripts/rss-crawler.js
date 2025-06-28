@@ -17,40 +17,40 @@ import Parser from "rss-parser";
 
 // RSS 피드 목록 (기업/개인 구분)
 const RSS_FEEDS = [
-  { name: "토스 블로그", url: "https://toss.tech/rss.xml", type: "company" },
+  { name: "토스", url: "https://toss.tech/rss.xml", type: "company" },
   {
-    name: "당근 블로그",
+    name: "당근",
     url: "https://medium.com/feed/daangn",
     type: "company",
   },
   {
-    name: "카카오 블로그",
+    name: "카카오",
     url: "https://tech.kakao.com/feed/",
     type: "company",
   },
   {
-    name: "카카오페이 기술 블로그",
+    name: "카카오페이",
     url: "https://tech.kakaopay.com/rss",
     type: "company",
   },
   {
-    name: "무신사 블로그",
+    name: "무신사",
     url: "https://medium.com/feed/musinsa-tech",
     type: "company",
   },
   { name: "29CM", url: "https://medium.com/feed/29cm", type: "company" },
   {
-    name: "올리브영 기술블로그",
+    name: "올리브영",
     url: "https://oliveyoung.tech/rss.xml",
     type: "company",
   },
   {
-    name: "우아한 형제들 블로그",
+    name: "우아한형제들",
     url: "https://techblog.woowahan.com/feed/",
     type: "company",
   },
   {
-    name: "마켓 컬리 블로그",
+    name: "마켓컬리",
     url: "https://helloworld.kurly.com/feed.xml",
     type: "company",
   },
@@ -60,7 +60,7 @@ const RSS_FEEDS = [
     type: "company",
   },
   {
-    name: "쏘카 블로그",
+    name: "쏘카",
     url: "https://tech.socarcorp.kr/feed",
     type: "company",
   },
@@ -75,12 +75,12 @@ const RSS_FEEDS = [
     type: "company",
   },
   {
-    name: "데브시스터즈 블로그",
+    name: "데브시스터즈",
     url: "https://tech.devsisters.com/rss.xml",
     type: "company",
   },
   {
-    name: "뱅크샐러드 블로그",
+    name: "뱅크샐러드",
     url: "https://blog.banksalad.com/rss.xml",
     type: "company",
   },
@@ -111,35 +111,25 @@ const RSS_FEEDS = [
     type: "company",
   },
   { name: "직방", url: "https://medium.com/feed/zigbang", type: "company" },
-  {
-    name: "클래스101",
-    url: "https://medium.com/feed/class101",
-    type: "company",
-  },
-  {
-    name: "휴먼스케이프",
-    url: "https://medium.com/feed/humanscape-tech",
-    type: "company",
-  },
 
   // 개인 블로그
   {
-    name: "정현수님 블로그",
+    name: "정현수",
     url: "https://junghyeonsu.com/rss.xml",
     type: "personal",
   },
   {
-    name: "문동욱님 블로그",
+    name: "문동욱",
     url: "https://evan-moon.github.io/feed.xml",
     type: "personal",
   },
   {
-    name: "테오님 블로그",
+    name: "테오",
     url: "https://api.velog.io/rss/@teo",
     type: "personal",
   },
   {
-    name: "손수림님 블로그",
+    name: "손수림",
     url: "https://api.velog.io/rss/@surim014",
     type: "personal",
   },
