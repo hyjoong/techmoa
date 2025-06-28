@@ -129,6 +129,11 @@ const RSS_FEEDS = [
     type: "personal",
   },
   {
+    name: "우혁",
+    url: "https://api.velog.io/rss/@woogur29",
+    type: "personal",
+  },
+  {
     name: "정현수",
     url: "https://junghyeonsu.com/rss.xml",
     type: "personal",
