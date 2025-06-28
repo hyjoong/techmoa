@@ -49,8 +49,8 @@ export async function fetchAvailableBlogs() {
 
     const blogs = Array.from(blogMap.values());
 
-    // 기업 블로그를 사용자 접근성을 고려한 우선순위로 정렬
-    const companyPriority = [
+    // 기업 블로그를 사용자 접근성을 고려한 정렬 순서로 정렬
+    const companySortOrder = [
       "토스",
       "당근",
       "카카오",
@@ -77,10 +77,10 @@ export async function fetchAvailableBlogs() {
 
     const companies = blogs.filter((blog) => blog.blog_type === "company");
     const sortedCompanies = companies.sort((a, b) => {
-      const aIndex = companyPriority.indexOf(a.author);
-      const bIndex = companyPriority.indexOf(b.author);
+      const aIndex = companySortOrder.indexOf(a.author);
+      const bIndex = companySortOrder.indexOf(b.author);
 
-      // 우선순위에 있는 기업은 위로, 없는 기업은 알파벳 순
+      // 정렬 순서에 있는 기업은 위로, 없는 기업은 알파벳 순
       if (aIndex === -1 && bIndex === -1) {
         return a.author.localeCompare(b.author);
       }
