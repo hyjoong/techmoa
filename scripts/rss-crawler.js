@@ -17,41 +17,10 @@ import Parser from "rss-parser";
 
 // RSS 피드 목록 (기업/개인 구분)
 const RSS_FEEDS = [
-  // 기존 기업 블로그
   { name: "토스 블로그", url: "https://toss.tech/rss.xml", type: "company" },
-  {
-    name: "무신사 블로그",
-    url: "https://medium.com/feed/musinsa-tech",
-    type: "company",
-  },
-  {
-    name: "마켓 컬리 블로그",
-    url: "https://helloworld.kurly.com/feed.xml",
-    type: "company",
-  },
-  {
-    name: "우아한 형제들 블로그",
-    url: "https://techblog.woowahan.com/feed/",
-    type: "company",
-  },
-  {
-    name: "데브시스터즈 블로그",
-    url: "https://tech.devsisters.com/rss.xml",
-    type: "company",
-  },
   {
     name: "당근 블로그",
     url: "https://medium.com/feed/daangn",
-    type: "company",
-  },
-  {
-    name: "쏘카 블로그",
-    url: "https://tech.socarcorp.kr/feed",
-    type: "company",
-  },
-  {
-    name: "뱅크샐러드 블로그",
-    url: "https://blog.banksalad.com/rss.xml",
     type: "company",
   },
   {
@@ -64,43 +33,71 @@ const RSS_FEEDS = [
     url: "https://tech.kakaopay.com/rss",
     type: "company",
   },
-
-  // 새로 추가된 기업 블로그
-  { name: "29CM", url: "https://medium.com/feed/29cm", type: "company" },
   {
-    name: "에잇퍼센트",
-    url: "https://8percent.github.io/feed.xml",
+    name: "무신사 블로그",
+    url: "https://medium.com/feed/musinsa-tech",
     type: "company",
   },
+  { name: "29CM", url: "https://medium.com/feed/29cm", type: "company" },
   {
     name: "올리브영 기술블로그",
     url: "https://oliveyoung.tech/rss.xml",
     type: "company",
   },
   {
+    name: "우아한 형제들 블로그",
+    url: "https://techblog.woowahan.com/feed/",
+    type: "company",
+  },
+  {
+    name: "마켓 컬리 블로그",
+    url: "https://helloworld.kurly.com/feed.xml",
+    type: "company",
+  },
+  {
+    name: "에잇퍼센트",
+    url: "https://8percent.github.io/feed.xml",
+    type: "company",
+  },
+  {
+    name: "쏘카 블로그",
+    url: "https://tech.socarcorp.kr/feed",
+    type: "company",
+  },
+  {
+    name: "이스트소프트",
+    url: "https://blog.est.ai/feed.xml",
+    type: "company",
+  },
+  {
+    name: "하이퍼커넥트",
+    url: "https://hyperconnect.github.io/feed.xml",
+    type: "company",
+  },
+  {
+    name: "데브시스터즈 블로그",
+    url: "https://tech.devsisters.com/rss.xml",
+    type: "company",
+  },
+  {
+    name: "뱅크샐러드 블로그",
+    url: "https://blog.banksalad.com/rss.xml",
+    type: "company",
+  },
+  { name: "왓챠", url: "https://medium.com/feed/watcha", type: "company" },
+  {
     name: "다나와",
     url: "https://danawalab.github.io/feed.xml",
     type: "company",
   },
-  {
-    name: "데이블",
-    url: "https://teamdable.github.io/techblog/feed.xml",
-    type: "company",
-  },
-  {
-    name: "스타일쉐어",
-    url: "https://medium.com/feed/styleshare",
-    type: "company",
-  },
-  { name: "왓챠", url: "https://medium.com/feed/watcha", type: "company" },
   {
     name: "요기요",
     url: "https://medium.com/feed/deliverytechkorea",
     type: "company",
   },
   {
-    name: "우아한형제들",
-    url: "https://woowabros.github.io/feed.xml",
+    name: "쿠팡",
+    url: "https://medium.com/feed/coupang-tech",
     type: "company",
   },
   {
@@ -109,24 +106,14 @@ const RSS_FEEDS = [
     type: "company",
   },
   {
-    name: "이스트소프트",
-    url: "https://blog.est.ai/feed.xml",
+    name: "데이블",
+    url: "https://teamdable.github.io/techblog/feed.xml",
     type: "company",
   },
   { name: "직방", url: "https://medium.com/feed/zigbang", type: "company" },
   {
-    name: "쿠팡",
-    url: "https://medium.com/feed/coupang-tech",
-    type: "company",
-  },
-  {
     name: "클래스101",
     url: "https://medium.com/feed/class101",
-    type: "company",
-  },
-  {
-    name: "하이퍼커넥트",
-    url: "https://hyperconnect.github.io/feed.xml",
     type: "company",
   },
   {
