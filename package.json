@@ -12,7 +12,8 @@
     "validate-rss": "node scripts/validate-rss.js",
     "validate-rss:verbose": "node scripts/validate-rss.js --verbose",
     "test:rss": "node scripts/validate-rss.js",
-    "rss-stats": "node scripts/rss-stats.js"
+    "rss-stats": "node scripts/rss-stats.js",
+    "crawl-rss": "node scripts/rss-crawler.js"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
