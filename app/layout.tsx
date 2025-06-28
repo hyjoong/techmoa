@@ -70,9 +70,8 @@ export const metadata: Metadata = {
     maximumScale: 1,
   },
   verification: {
-    google: "your-google-verification-code",
     other: {
-      "naver-site-verification": "your-naver-verification-code",
+      "naver-site-verification": "8b48897b4d8eb63c4a776125be8b5c429fcabb1f",
     },
   },
   manifest: "/manifest.json",
