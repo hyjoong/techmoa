@@ -11,6 +11,12 @@ on:
     paths:
       - "scripts/rss-crawler.js"
 
+# 권한 설정 추가
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 jobs:
   validate-rss-feeds:
     runs-on: ubuntu-latest
