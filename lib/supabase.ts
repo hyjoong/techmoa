@@ -49,9 +49,53 @@ export async function fetchAvailableBlogs() {
 
     const blogs = Array.from(blogMap.values());
 
+    // 기업 블로그를 사용자 접근성을 고려한 우선순위로 정렬
+    const companyPriority = [
+      "토스 블로그",
+      "당근 블로그",
+      "카카오 블로그",
+      "카카오페이 기술 블로그",
+      "무신사 블로그",
+      "29CM",
+      "올리브영 기술블로그",
+      "우아한 형제들 블로그",
+      "마켓 컬리 블로그",
+      "에잇퍼센트",
+      "쏘카 블로그",
+      "이스트소프트",
+      "하이퍼커넥트",
+      "데브시스터즈 블로그",
+      "뱅크샐러드 블로그",
+      "왓챠",
+      "다나와",
+      "요기요",
+      "쿠팡",
+      "원티드",
+      "데이블",
+      "직방",
+      "클래스101",
+      "휴먼스케이프",
+    ];
+
+    const companies = blogs.filter((blog) => blog.blog_type === "company");
+    const sortedCompanies = companies.sort((a, b) => {
+      const aIndex = companyPriority.indexOf(a.author);
+      const bIndex = companyPriority.indexOf(b.author);
+
+      // 우선순위에 있는 기업은 위로, 없는 기업은 알파벳 순
+      if (aIndex === -1 && bIndex === -1) {
+        return a.author.localeCompare(b.author);
+      }
+      if (aIndex === -1) return 1;
+      if (bIndex === -1) return -1;
+      return aIndex - bIndex;
+    });
+
     return {
-      companies: blogs.filter((blog) => blog.blog_type === "company"),
-      individuals: blogs.filter((blog) => blog.blog_type === "personal"),
+      companies: sortedCompanies,
+      individuals: blogs
+        .filter((blog) => blog.blog_type === "personal")
+        .sort((a, b) => a.author.localeCompare(b.author)),
     };
   } catch (error) {
     console.error("블로그 목록 조회 실패:", error);
