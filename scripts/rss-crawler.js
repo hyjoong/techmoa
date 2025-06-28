@@ -114,23 +114,28 @@ const RSS_FEEDS = [
 
   // 개인 블로그
   {
-    name: "정현수",
-    url: "https://junghyeonsu.com/rss.xml",
-    type: "personal",
-  },
-  {
     name: "문동욱",
     url: "https://evan-moon.github.io/feed.xml",
     type: "personal",
   },
   {
-    name: "테오",
-    url: "https://api.velog.io/rss/@teo",
+    name: "손수림",
+    url: "https://api.velog.io/rss/@surim014",
     type: "personal",
   },
   {
-    name: "손수림",
-    url: "https://api.velog.io/rss/@surim014",
+    name: "스벨트전도사",
+    url: "https://api.velog.io/rss/@k-svelte-masterr",
+    type: "personal",
+  },
+  {
+    name: "정현수",
+    url: "https://junghyeonsu.com/rss.xml",
+    type: "personal",
+  },
+  {
+    name: "테오",
+    url: "https://api.velog.io/rss/@teo",
     type: "personal",
   },
 ];
