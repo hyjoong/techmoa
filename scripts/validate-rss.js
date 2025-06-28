@@ -9,9 +9,9 @@
  *   node scripts/validate-rss.js --verbose          # 상세 정보 출력
  */
 
-const fs = require("fs");
-const axios = require("axios");
-const xml2js = require("xml2js");
+import fs from "fs";
+import axios from "axios";
+import xml2js from "xml2js";
 
 // 커맨드 라인 인수 파싱
 const args = process.argv.slice(2);
@@ -197,8 +197,8 @@ async function main() {
 }
 
 // 스크립트 실행
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
 
-module.exports = { validateRssFeed, extractRssUrls };
+export { validateRssFeed, extractRssUrls };
