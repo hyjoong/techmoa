@@ -142,7 +142,11 @@ const RSS_FEEDS = [
     name: "테오",
     url: "https://api.velog.io/rss/@teo",
     type: "personal",
-  },
+  },{
+    name: "멍개",
+    url: "https://rss.blog.naver.com/pjt3591oo.xml",
+    type: "personal",
+  }
 ];
 
 // Supabase 클라이언트 초기화
