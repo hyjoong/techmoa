@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { BlogCard } from "@/components/blog-card";
-import { BlogFormModal } from "@/components/blog-form-modal";
+// import { BlogFormModal } from "@/components/blog-form-modal";
 import { BlogTypeToggle } from "@/components/blog-type-toggle";
 import { BlogSelector } from "@/components/blog-selector";
 import { Pagination } from "@/components/pagination";
@@ -28,7 +28,7 @@ export default function HomePage() {
     "published_at"
   );
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
+  // const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -94,32 +94,37 @@ export default function HomePage() {
   // 활성 필터 확인
   const hasActiveFilters = blogType !== "company" || selectedBlog !== "all";
 
-  // 블로그 추가/수정 완료 핸들러
-  const handleBlogSaved = () => {
-    setIsFormModalOpen(false);
-    setEditingBlog(null);
-    loadBlogs(true);
-    toast({
-      title: "성공",
-      description: editingBlog
-        ? "블로그가 수정되었습니다."
-        : "새 블로그가 추가되었습니다.",
-    });
-  };
+  // // 블로그 추가/수정 완료 핸들러
+  // const handleBlogSaved = () => {
+  //   setIsFormModalOpen(false);
+  //   setEditingBlog(null);
+  //   loadBlogs(true);
+  //   toast({
+  //     title: "성공",
+  //     description: editingBlog
+  //       ? "블로그가 수정되었습니다."
+  //       : "새 블로그가 추가되었습니다.",
+  //   });
+  // };
 
-  // 블로그 삭제 완료 핸들러
-  const handleBlogDeleted = () => {
-    loadBlogs(true);
-    toast({
-      title: "성공",
-      description: "블로그가 삭제되었습니다.",
-    });
-  };
+  // // 블로그 삭제 완료 핸들러
+  // const handleBlogDeleted = () => {
+  //   loadBlogs(true);
+  //   toast({
+  //     title: "성공",
+  //     description: "블로그가 삭제되었습니다.",
+  //   });
+  // };
 
-  // 블로그 수정 핸들러
-  const handleEditBlog = (blog: Blog) => {
-    setEditingBlog(blog);
-    setIsFormModalOpen(true);
+  // // 블로그 수정 핸들러
+  // const handleEditBlog = (blog: Blog) => {
+  //   setEditingBlog(blog);
+  //   setIsFormModalOpen(true);
+  // };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -261,7 +266,7 @@ export default function HomePage() {
                   totalPages={totalPages}
                   totalCount={totalCount}
                   itemsPerPage={ITEMS_PER_PAGE}
-                  onPageChange={setCurrentPage}
+                  onPageChange={handlePageChange}
                 />
               </div>
             )}
@@ -270,7 +275,7 @@ export default function HomePage() {
       </main>
 
       {/* 블로그 추가/수정 모달 */}
-      <BlogFormModal
+      {/* <BlogFormModal
         isOpen={isFormModalOpen}
         onClose={() => {
           setIsFormModalOpen(false);
@@ -278,7 +283,7 @@ export default function HomePage() {
         }}
         blog={editingBlog}
         onSaved={handleBlogSaved}
-      />
+      /> */}
 
       {/* 푸터 */}
       <footer className="mt-16 border-t border-slate-200/50 dark:border-slate-700/50 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
