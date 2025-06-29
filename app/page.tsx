@@ -1,130 +1,61 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { BlogCard } from "@/components/blog-card";
-// import { BlogFormModal } from "@/components/blog-form-modal";
 import { BlogTypeToggle } from "@/components/blog-type-toggle";
 import { BlogSelector } from "@/components/blog-selector";
 import { Pagination } from "@/components/pagination";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
-import { Blog, fetchBlogs } from "@/lib/supabase";
 import { Github, RotateCcw } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useScrollToTop } from "@/hooks/use-scroll-to-top";
+import { useUrlFilters } from "@/hooks/use-url-filters";
+import { useBlogData } from "@/hooks/use-blog-data";
 
 const ITEMS_PER_PAGE = 12;
 
 export default function HomePage() {
-  const [blogs, setBlogs] = useState<Blog[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  // const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
-  const { toast } = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const scrollToTop = useScrollToTop();
 
-  // 쿼리스트링에서 상태 읽기
-  const blogType =
-    (searchParams.get("type") as "company" | "personal") || "company";
-  const selectedBlog = searchParams.get("blog") || "all";
-  const currentPage = parseInt(searchParams.get("page") || "1", 10);
-  const sortBy =
-    (searchParams.get("sort") as "published_at" | "title" | "views") ||
-    "published_at";
+  // URL 필터 상태 관리
+  const {
+    blogType,
+    selectedBlog,
+    currentPage,
+    sortBy,
+    handleBlogTypeChange,
+    handleBlogChange,
+    handlePageChange,
+    clearFilters,
+    hasActiveFilters,
+  } = useUrlFilters();
 
-  // URL 업데이트 함수
-  const updateURL = (updates: Record<string, string | number | null>) => {
-    const params = new URLSearchParams(searchParams.toString());
-
-    Object.entries(updates).forEach(([key, value]) => {
-      if (
-        value === null ||
-        value === "" ||
-        (key === "type" && value === "company") ||
-        (key === "blog" && value === "all") ||
-        (key === "page" && value === 1) ||
-        (key === "sort" && value === "published_at")
-      ) {
-        params.delete(key);
-      } else {
-        params.set(key, value.toString());
-      }
-    });
-
-    const newURL = params.toString() ? `?${params.toString()}` : "/";
-    router.replace(newURL, { scroll: false });
-  };
-
-  // 데이터 로드
-  const loadBlogs = async () => {
-    try {
-      setLoading(true);
-
-      const result = await fetchBlogs({
-        page: currentPage,
-        limit: ITEMS_PER_PAGE,
-        sortBy,
-        blogType,
-        author: selectedBlog === "all" ? undefined : selectedBlog,
-      });
-
-      setBlogs(result.blogs);
-      setTotalPages(result.totalPages);
-      setTotalCount(result.totalCount);
-    } catch (error) {
-      console.error("블로그 로드 실패:", error);
-      toast({
-        title: "오류",
-        description: "블로그 데이터를 불러오는데 실패했습니다.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // URL 파라미터 변경 시 데이터 로드
-  useEffect(() => {
-    loadBlogs();
-    // 필터 변경 시 상단으로 스크롤 (초기 로드 제외)
-    if (blogType !== "company" || selectedBlog !== "all" || currentPage > 1) {
-      scrollToTop();
-    }
-  }, [sortBy, blogType, selectedBlog, currentPage, scrollToTop]);
-
-  // 필터 초기화
-  const clearFilters = () => {
-    updateURL({ type: "company", blog: "all", page: 1 });
-    scrollToTop();
-  };
+  // 블로그 데이터 관리
+  const { blogs, loading, totalPages, totalCount } = useBlogData({
+    blogType,
+    selectedBlog,
+    currentPage,
+    sortBy,
+  });
 
   // 로고 클릭 시 초기화
   const handleLogoClick = () => {
     router.push("/");
   };
 
-  // 활성 필터 확인
-  const hasActiveFilters = blogType !== "company" || selectedBlog !== "all";
-
-  // 블로그 타입 변경 핸들러
-  const handleBlogTypeChange = (newType: "company" | "personal") => {
-    updateURL({ type: newType, blog: "all", page: 1 });
+  // 페이지 변경 핸들러 (스크롤 추가)
+  const handlePageChangeWithScroll = (page: number) => {
+    handlePageChange(page);
+    scrollToTop();
   };
 
-  // 블로그 선택 변경 핸들러
-  const handleBlogChange = (newBlog: string) => {
-    updateURL({ blog: newBlog, page: 1 });
-  };
-
-  // 페이지 변경 핸들러
-  const handlePageChange = (page: number) => {
-    updateURL({ page });
+  // 필터 초기화 (스크롤 추가)
+  const handleClearFilters = () => {
+    clearFilters();
     scrollToTop();
   };
 
@@ -161,7 +92,7 @@ export default function HomePage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={clearFilters}
+                  onClick={handleClearFilters}
                   className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"
                 >
                   <RotateCcw className="h-4 w-4" />
@@ -203,7 +134,7 @@ export default function HomePage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={clearFilters}
+                  onClick={handleClearFilters}
                   className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"
                 >
                   <RotateCcw className="h-4 w-4" />
@@ -237,7 +168,7 @@ export default function HomePage() {
             </p>
             {hasActiveFilters ? (
               <Button
-                onClick={clearFilters}
+                onClick={handleClearFilters}
                 variant="outline"
                 className="rounded-full px-8 py-3 text-lg"
               >
@@ -267,7 +198,7 @@ export default function HomePage() {
                   totalPages={totalPages}
                   totalCount={totalCount}
                   itemsPerPage={ITEMS_PER_PAGE}
-                  onPageChange={handlePageChange}
+                  onPageChange={handlePageChangeWithScroll}
                 />
               </div>
             )}
