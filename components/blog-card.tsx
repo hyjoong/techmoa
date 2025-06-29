@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Building2, Calendar, Eye, User } from "lucide-react";
 import Image from "next/image";
 import { incrementViews, type Blog } from "@/lib/supabase";
+import { useState } from "react";
 // import { CompanyLogo } from "./company-logo";
 
 interface BlogCardProps {
@@ -12,6 +13,9 @@ interface BlogCardProps {
 }
 
 export function BlogCard({ blog }: BlogCardProps) {
+  const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+
   const handleLinkClick = async (e: React.MouseEvent) => {
     // 조회수 증가 (백그라운드에서 실행)
     try {
@@ -38,6 +42,9 @@ export function BlogCard({ blog }: BlogCardProps) {
     return views.toString();
   };
 
+  // 썸네일 표시 여부 결정
+  const shouldShowThumbnail = blog.thumbnail_url && !imageError;
+
   return (
     <a
       href={blog.external_url}
@@ -47,25 +54,31 @@ export function BlogCard({ blog }: BlogCardProps) {
       className="block group h-full"
     >
       <Card className="h-full flex flex-col cursor-pointer card-hover border border-border/20 shadow-lg hover:shadow-xl bg-card dark:bg-card/80 backdrop-blur-sm dark:backdrop-blur-none rounded-xl overflow-hidden">
-        <CardHeader className="p-0">
-          {blog.thumbnail_url && (
-            <div className="relative aspect-video overflow-hidden rounded-t-xl">
+        {shouldShowThumbnail && (
+          <CardHeader className="p-0">
+            <div className="relative aspect-video overflow-hidden rounded-t-xl bg-muted">
+              {!imageLoaded && (
+                <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/50 animate-pulse" />
+              )}
               <Image
-                src={blog.thumbnail_url}
+                src={blog.thumbnail_url!}
                 alt={blog.title}
                 fill
-                className="object-cover group-hover:scale-105 transition-transform duration-300"
-                onError={(e) => {
-                  // 썸네일 로드 실패 시 기본 이미지로 대체
-                  const target = e.target as HTMLImageElement;
-                  target.src = "/placeholder.jpg";
+                className={`object-cover group-hover:scale-105 transition-all duration-300 ${
+                  imageLoaded ? "opacity-100" : "opacity-0"
+                }`}
+                onLoad={() => setImageLoaded(true)}
+                onError={() => {
+                  console.log(`썸네일 로드 실패: ${blog.thumbnail_url}`);
+                  setImageError(true);
                 }}
               />
-              {/* 오버레이 */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              {imageLoaded && (
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              )}
             </div>
-          )}
-        </CardHeader>
+          </CardHeader>
+        )}
 
         <CardContent className="p-6 flex-1 flex flex-col">
           <h3 className="font-semibold text-lg mb-3 line-clamp-2 group-hover:text-primary transition-colors duration-200">
