@@ -142,11 +142,12 @@ const RSS_FEEDS = [
     name: "테오",
     url: "https://api.velog.io/rss/@teo",
     type: "personal",
-  },{
+  },
+  {
     name: "멍개",
     url: "https://rss.blog.naver.com/pjt3591oo.xml",
     type: "personal",
-  }
+  },
 ];
 
 // Supabase 클라이언트 초기화
@@ -205,22 +206,95 @@ function extractThumbnail(item) {
     return item["media:thumbnail"].$.url;
   }
 
-  // 4. content에서 첫 번째 img 태그 추출
+  // 4. content에서 이미지 추출
   const content = item.content || item["content:encoded"] || item.summary || "";
-  const imgMatch = content.match(/<img[^>]+src="([^"]+)"/i);
-  if (imgMatch && imgMatch[1]) {
-    // 상대 URL인 경우 절대 URL로 변환
-    const imgUrl = imgMatch[1];
-    if (imgUrl.startsWith("http")) {
-      return imgUrl;
+
+  // 네이버 블로그 특별 처리
+  if (item.link && item.link.includes("blog.naver.com")) {
+    // 네이버 블로그 썸네일 패턴들
+    const naverPatterns = [
+      // 네이버 스마트에디터 이미지
+      /<img[^>]+src="(https?:\/\/[^"]*(?:blogfiles\.naver\.net|phinf\.naver\.net|storep-phinf\.pstatic\.net)[^"]*)"[^>]*>/i,
+      // 네이버 블로그 CDN 이미지
+      /<img[^>]+src="(https?:\/\/[^"]*(?:postfiles\.pstatic\.net|blogfiles\.naver\.net)[^"]*)"[^>]*>/i,
+      // 일반 이미지 태그
+      /<img[^>]+src="([^"]+)"[^>]*>/i,
+    ];
+
+    for (const pattern of naverPatterns) {
+      const match = content.match(pattern);
+      if (match && match[1]) {
+        const imgUrl = match[1];
+        // 네이버 이미지 URL 정리 (쿼리 파라미터 제거)
+        const cleanUrl = imgUrl.split("?")[0];
+        if (cleanUrl.match(/\.(jpg|jpeg|png|webp|gif)$/i)) {
+          return cleanUrl;
+        }
+      }
     }
-    // RSS 피드 URL에서 도메인 추출하여 상대 URL을 절대 URL로 변환
-    try {
-      const feedUrl = new URL(item.link || "");
-      return new URL(imgUrl, feedUrl.origin).href;
-    } catch (error) {
-      return null;
+  }
+
+  // 5. 티스토리 블로그 특별 처리
+  if (item.link && item.link.includes("tistory.com")) {
+    const tistoryPattern =
+      /<img[^>]+src="(https?:\/\/[^"]*(?:tistory\.com|daumcdn\.net)[^"]*)"[^>]*>/i;
+    const match = content.match(tistoryPattern);
+    if (match && match[1]) {
+      return match[1];
     }
+  }
+
+  // 6. Velog 특별 처리
+  if (item.link && item.link.includes("velog.io")) {
+    const velogPattern =
+      /<img[^>]+src="(https?:\/\/[^"]*(?:velog\.velcdn\.com|images\.velog\.io)[^"]*)"[^>]*>/i;
+    const match = content.match(velogPattern);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+
+  // 7. 일반 이미지 추출 (개선된 버전)
+  const imgPatterns = [
+    // data-src 속성 (lazy loading)
+    /<img[^>]+data-src="([^"]+)"[^>]*>/i,
+    // 일반 src 속성
+    /<img[^>]+src="([^"]+)"[^>]*>/i,
+    // srcset 속성에서 첫 번째 이미지
+    /<img[^>]+srcset="([^"\s,]+)[^"]*"[^>]*>/i,
+  ];
+
+  for (const pattern of imgPatterns) {
+    const match = content.match(pattern);
+    if (match && match[1]) {
+      const imgUrl = match[1];
+
+      // 유효한 이미지 URL인지 확인 (base64 제외)
+      if (imgUrl.startsWith("data:")) continue;
+
+      // 상대 URL인 경우 절대 URL로 변환
+      if (imgUrl.startsWith("http")) {
+        return imgUrl;
+      }
+
+      // RSS 피드 URL에서 도메인 추출하여 상대 URL을 절대 URL로 변환
+      try {
+        const feedUrl = new URL(item.link || "");
+        const absoluteUrl = new URL(imgUrl, feedUrl.origin).href;
+        return absoluteUrl;
+      } catch (error) {
+        // URL 변환 실패 시 다음 패턴으로 계속
+        continue;
+      }
+    }
+  }
+
+  // 8. Open Graph 이미지 확인 (일부 블로그에서 사용)
+  const ogImageMatch = content.match(
+    /<meta[^>]+property="og:image"[^>]+content="([^"]+)"[^>]*>/i
+  );
+  if (ogImageMatch && ogImageMatch[1]) {
+    return ogImageMatch[1];
   }
 
   return null;
