@@ -20,34 +20,48 @@ export interface Blog {
   updated_at: string;
 }
 
+// 저자 타입 정의
+interface AuthorInfo {
+  author: string;
+  blog_type: "company" | "personal";
+}
+
 // 사용 가능한 블로그 목록 조회 (기업/개인별)
 export async function fetchAvailableBlogs() {
   try {
-    const { data, error } = await supabase
+    // 간단하게 author 목록 조회 후 클라이언트에서 중복 제거
+    const { data: companyData, error: companyError } = await supabase
       .from("blogs")
-      .select("author, blog_type")
-      .order("author");
+      .select("author")
+      .eq("blog_type", "company");
 
-    if (error) {
-      throw new Error(`블로그 목록 조회 실패: ${error.message}`);
+    const { data: personalData, error: personalError } = await supabase
+      .from("blogs")
+      .select("author")
+      .eq("blog_type", "personal");
+
+    if (companyError) {
+      throw new Error(`기업 블로그 목록 조회 실패: ${companyError.message}`);
     }
 
-    // 중복 제거 및 그룹화
-    const blogMap = new Map<
-      string,
-      { author: string; blog_type: "company" | "personal" }
-    >();
+    if (personalError) {
+      throw new Error(`개인 블로그 목록 조회 실패: ${personalError.message}`);
+    }
 
-    data?.forEach((item) => {
-      if (!blogMap.has(item.author)) {
-        blogMap.set(item.author, {
-          author: item.author,
-          blog_type: item.blog_type,
-        });
-      }
-    });
+    // 간단한 중복 제거 (크롤러가 이미 중복을 방지하므로 최소한만)
+    const companies = Array.from(
+      new Set((companyData || []).map((item) => item.author))
+    ).map((author) => ({
+      author,
+      blog_type: "company" as const,
+    }));
 
-    const blogs = Array.from(blogMap.values());
+    const individuals = Array.from(
+      new Set((personalData || []).map((item) => item.author))
+    ).map((author) => ({
+      author,
+      blog_type: "personal" as const,
+    }));
 
     // 기업 블로그를 사용자 접근성을 고려한 정렬 순서로 정렬
     const companySortOrder = [
@@ -75,8 +89,8 @@ export async function fetchAvailableBlogs() {
       "직방",
     ];
 
-    const companies = blogs.filter((blog) => blog.blog_type === "company");
-    const sortedCompanies = companies.sort((a, b) => {
+    // 기업 블로그 정렬
+    const sortedCompanies = companies.sort((a: AuthorInfo, b: AuthorInfo) => {
       const aIndex = companySortOrder.indexOf(a.author);
       const bIndex = companySortOrder.indexOf(b.author);
 
@@ -89,11 +103,14 @@ export async function fetchAvailableBlogs() {
       return aIndex - bIndex;
     });
 
+    // 개인 블로그 정렬 (알파벳 순)
+    const sortedPersonals = individuals.sort((a: AuthorInfo, b: AuthorInfo) =>
+      a.author.localeCompare(b.author)
+    );
+
     return {
       companies: sortedCompanies,
-      individuals: blogs
-        .filter((blog) => blog.blog_type === "personal")
-        .sort((a, b) => a.author.localeCompare(b.author)),
+      individuals: sortedPersonals,
     };
   } catch (error) {
     console.error("블로그 목록 조회 실패:", error);
