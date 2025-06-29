@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Blog, fetchBlogs } from "@/lib/supabase";
 import { Github, RotateCcw } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useScrollToTop } from "@/hooks/use-scroll-to-top";
 
@@ -20,28 +20,54 @@ const ITEMS_PER_PAGE = 12;
 export default function HomePage() {
   const [blogs, setBlogs] = useState<Blog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
-  const [blogType, setBlogType] = useState<"company" | "personal">("company");
-  const [selectedBlog, setSelectedBlog] = useState("all");
-  const [sortBy, setSortBy] = useState<"published_at" | "title" | "views">(
-    "published_at"
-  );
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   // const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const scrollToTop = useScrollToTop();
 
+  // 쿼리스트링에서 상태 읽기
+  const blogType =
+    (searchParams.get("type") as "company" | "personal") || "company";
+  const selectedBlog = searchParams.get("blog") || "all";
+  const currentPage = parseInt(searchParams.get("page") || "1", 10);
+  const sortBy =
+    (searchParams.get("sort") as "published_at" | "title" | "views") ||
+    "published_at";
+
+  // URL 업데이트 함수
+  const updateURL = (updates: Record<string, string | number | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (
+        value === null ||
+        value === "" ||
+        (key === "type" && value === "company") ||
+        (key === "blog" && value === "all") ||
+        (key === "page" && value === 1) ||
+        (key === "sort" && value === "published_at")
+      ) {
+        params.delete(key);
+      } else {
+        params.set(key, value.toString());
+      }
+    });
+
+    const newURL = params.toString() ? `?${params.toString()}` : "/";
+    router.replace(newURL, { scroll: false });
+  };
+
   // 데이터 로드
-  const loadBlogs = async (resetPage = false) => {
+  const loadBlogs = async () => {
     try {
       setLoading(true);
-      const page = resetPage ? 1 : currentPage;
 
       const result = await fetchBlogs({
-        page,
+        page: currentPage,
         limit: ITEMS_PER_PAGE,
         sortBy,
         blogType,
@@ -51,7 +77,6 @@ export default function HomePage() {
       setBlogs(result.blogs);
       setTotalPages(result.totalPages);
       setTotalCount(result.totalCount);
-      if (resetPage) setCurrentPage(1);
     } catch (error) {
       console.error("블로그 로드 실패:", error);
       toast({
@@ -64,32 +89,18 @@ export default function HomePage() {
     }
   };
 
-  // 초기 로드 및 필터 변경 시 데이터 재로드
+  // URL 파라미터 변경 시 데이터 로드
   useEffect(() => {
-    loadBlogs(true);
+    loadBlogs();
     // 필터 변경 시 상단으로 스크롤 (초기 로드 제외)
-    if (blogType !== "company" || selectedBlog !== "all") {
+    if (blogType !== "company" || selectedBlog !== "all" || currentPage > 1) {
       scrollToTop();
     }
-  }, [sortBy, blogType, selectedBlog, scrollToTop]);
-
-  // 페이지 변경 시 데이터 로드
-  useEffect(() => {
-    if (currentPage > 1) {
-      loadBlogs();
-    }
-  }, [currentPage]);
-
-  // 블로그 타입 변경 시 선택된 블로그 초기화
-  useEffect(() => {
-    setSelectedBlog("all");
-  }, [blogType]);
+  }, [sortBy, blogType, selectedBlog, currentPage, scrollToTop]);
 
   // 필터 초기화
   const clearFilters = () => {
-    setBlogType("company");
-    setSelectedBlog("all");
-    setCurrentPage(1);
+    updateURL({ type: "company", blog: "all", page: 1 });
     scrollToTop();
   };
 
@@ -101,36 +112,19 @@ export default function HomePage() {
   // 활성 필터 확인
   const hasActiveFilters = blogType !== "company" || selectedBlog !== "all";
 
-  // // 블로그 추가/수정 완료 핸들러
-  // const handleBlogSaved = () => {
-  //   setIsFormModalOpen(false);
-  //   setEditingBlog(null);
-  //   loadBlogs(true);
-  //   toast({
-  //     title: "성공",
-  //     description: editingBlog
-  //       ? "블로그가 수정되었습니다."
-  //       : "새 블로그가 추가되었습니다.",
-  //   });
-  // };
+  // 블로그 타입 변경 핸들러
+  const handleBlogTypeChange = (newType: "company" | "personal") => {
+    updateURL({ type: newType, blog: "all", page: 1 });
+  };
 
-  // // 블로그 삭제 완료 핸들러
-  // const handleBlogDeleted = () => {
-  //   loadBlogs(true);
-  //   toast({
-  //     title: "성공",
-  //     description: "블로그가 삭제되었습니다.",
-  //   });
-  // };
+  // 블로그 선택 변경 핸들러
+  const handleBlogChange = (newBlog: string) => {
+    updateURL({ blog: newBlog, page: 1 });
+  };
 
-  // // 블로그 수정 핸들러
-  // const handleEditBlog = (blog: Blog) => {
-  //   setEditingBlog(blog);
-  //   setIsFormModalOpen(true);
-  // };
-
+  // 페이지 변경 핸들러
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    updateURL({ page });
     scrollToTop();
   };
 
@@ -155,11 +149,11 @@ export default function HomePage() {
             <div className="flex items-center gap-3">
               <BlogTypeToggle
                 blogType={blogType}
-                onBlogTypeChange={setBlogType}
+                onBlogTypeChange={handleBlogTypeChange}
               />
               <BlogSelector
                 selectedBlog={selectedBlog}
-                onBlogChange={setSelectedBlog}
+                onBlogChange={handleBlogChange}
                 blogType={blogType}
               />
 
@@ -197,11 +191,11 @@ export default function HomePage() {
             <div className="flex items-center justify-between gap-2">
               <BlogTypeToggle
                 blogType={blogType}
-                onBlogTypeChange={setBlogType}
+                onBlogTypeChange={handleBlogTypeChange}
               />
               <BlogSelector
                 selectedBlog={selectedBlog}
-                onBlogChange={setSelectedBlog}
+                onBlogChange={handleBlogChange}
                 blogType={blogType}
               />
 
