@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { BlogCard } from "@/components/blog-card";
 import { BlogTypeToggle } from "@/components/blog-type-toggle";
 import { BlogSelector } from "@/components/blog-selector";
@@ -17,7 +16,6 @@ import { useBlogData } from "@/hooks/use-blog-data";
 const ITEMS_PER_PAGE = 12;
 
 export default function HomePage() {
-  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const router = useRouter();
   const scrollToTop = useScrollToTop();
 
@@ -166,20 +164,13 @@ export default function HomePage() {
                 ? "다른 키워드로 검색해보세요."
                 : "블로그 글이 없습니다."}
             </p>
-            {hasActiveFilters ? (
+            {hasActiveFilters && (
               <Button
                 onClick={handleClearFilters}
                 variant="outline"
                 className="rounded-full px-8 py-3 text-lg"
               >
                 검색 초기화
-              </Button>
-            ) : (
-              <Button
-                onClick={() => setIsFormModalOpen(true)}
-                className="rounded-full px-8 py-3 text-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-              >
-                첫 번째 블로그 추가하기
               </Button>
             )}
           </div>
@@ -205,17 +196,6 @@ export default function HomePage() {
           </>
         )}
       </main>
-
-      {/* 블로그 추가/수정 모달 */}
-      {/* <BlogFormModal
-        isOpen={isFormModalOpen}
-        onClose={() => {
-          setIsFormModalOpen(false);
-          setEditingBlog(null);
-        }}
-        blog={editingBlog}
-        onSaved={handleBlogSaved}
-      /> */}
 
       {/* 푸터 */}
       <footer className="mt-16 border-t border-slate-200/50 dark:border-slate-700/50 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm">
