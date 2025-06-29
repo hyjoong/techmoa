@@ -13,6 +13,7 @@ import { Github, RotateCcw } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useScrollToTop } from "@/hooks/use-scroll-to-top";
 
 const ITEMS_PER_PAGE = 12;
 
@@ -31,6 +32,7 @@ export default function HomePage() {
   // const [editingBlog, setEditingBlog] = useState<Blog | null>(null);
   const { toast } = useToast();
   const router = useRouter();
+  const scrollToTop = useScrollToTop();
 
   // 데이터 로드
   const loadBlogs = async (resetPage = false) => {
@@ -65,7 +67,11 @@ export default function HomePage() {
   // 초기 로드 및 필터 변경 시 데이터 재로드
   useEffect(() => {
     loadBlogs(true);
-  }, [sortBy, blogType, selectedBlog]);
+    // 필터 변경 시 상단으로 스크롤 (초기 로드 제외)
+    if (blogType !== "company" || selectedBlog !== "all") {
+      scrollToTop();
+    }
+  }, [sortBy, blogType, selectedBlog, scrollToTop]);
 
   // 페이지 변경 시 데이터 로드
   useEffect(() => {
@@ -84,6 +90,7 @@ export default function HomePage() {
     setBlogType("company");
     setSelectedBlog("all");
     setCurrentPage(1);
+    scrollToTop();
   };
 
   // 로고 클릭 시 초기화
@@ -124,20 +131,7 @@ export default function HomePage() {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-
-    // iOS Safari 대응
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
-    if (isIOS) {
-      // iOS에서는 즉시 스크롤 + 약간의 지연 후 재시도
-      window.scrollTo(0, 0);
-      setTimeout(() => {
-        window.scrollTo(0, 0);
-      }, 100);
-    } else {
-      // 다른 기기에서는 부드러운 스크롤
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
+    scrollToTop();
   };
 
   return (
