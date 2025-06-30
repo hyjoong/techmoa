@@ -116,7 +116,11 @@ const RSS_FEEDS = [
     type: "company",
   },
   { name: "직방", url: "https://medium.com/feed/zigbang", type: "company" },
-
+  {
+    name: "콴다",
+    url: "https://medium.com/feed/mathpresso/tagged/frontend",
+    type: "company",
+  },
   // 개인 블로그
   {
     name: "문동욱",
