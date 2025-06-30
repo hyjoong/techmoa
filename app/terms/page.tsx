@@ -18,7 +18,7 @@ export default function TermsPage() {
             서비스 이용약관
           </h1>
           <p className="text-slate-600 dark:text-slate-400">
-            최종 업데이트: 2025년 6월 28일
+            최종 업데이트: 2025년 7월 1일
           </p>
         </div>
 
@@ -178,8 +178,8 @@ export default function TermsPage() {
 
             <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
               <p className="text-sm text-blue-800 dark:text-blue-200">
-                본 약관에 대한 문의사항이 있으시면 GitHub Issues를 통해 연락해
-                주시기 바랍니다.
+                본 약관에 대한 문의사항이 있으시면 이메일(hyjoong12@gmail.com)을
+                통해 연락해 주시기 바랍니다.
               </p>
             </div>
           </CardContent>
