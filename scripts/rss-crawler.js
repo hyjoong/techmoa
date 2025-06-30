@@ -191,8 +191,8 @@ function stripHtml(html) {
   return html.replace(/<[^>]*>/g, "").trim();
 }
 
-// 웹 페이지에서 Open Graph 이미지 추출 (토스 전용)
-async function fetchThumbnailFromWeb(url) {
+// 웹 페이지에서 Open Graph 이미지 추출 (토스, 올리브영 등)
+async function fetchThumbnailFromWeb(url, blogName = "웹") {
   try {
     const response = await fetch(url, {
       headers: {
@@ -203,7 +203,9 @@ async function fetchThumbnailFromWeb(url) {
     });
 
     if (!response.ok) {
-      console.log(`❌ [토스 썸네일] HTTP 에러 ${response.status}: ${url}`);
+      console.log(
+        `❌ [${blogName} 썸네일] HTTP 에러 ${response.status}: ${url}`
+      );
       return null;
     }
 
@@ -214,7 +216,7 @@ async function fetchThumbnailFromWeb(url) {
       /<meta[^>]+property="og:image"[^>]+content="([^"]+)"[^>]*>/i
     );
     if (ogImageMatch && ogImageMatch[1]) {
-      console.log(`✅ [토스 썸네일] 웹에서 추출: ${ogImageMatch[1]}`);
+      console.log(`✅ [${blogName} 썸네일] 웹에서 추출: ${ogImageMatch[1]}`);
       return ogImageMatch[1];
     }
 
@@ -224,15 +226,15 @@ async function fetchThumbnailFromWeb(url) {
     );
     if (twitterImageMatch && twitterImageMatch[1]) {
       console.log(
-        `✅ [토스 썸네일] 트위터 메타에서 추출: ${twitterImageMatch[1]}`
+        `✅ [${blogName} 썸네일] 트위터 메타에서 추출: ${twitterImageMatch[1]}`
       );
       return twitterImageMatch[1];
     }
 
-    console.log(`❌ [토스 썸네일] 메타 이미지 없음: ${url}`);
+    console.log(`❌ [${blogName} 썸네일] 메타 이미지 없음: ${url}`);
     return null;
   } catch (error) {
-    console.log(`❌ [토스 썸네일] 웹 접속 실패: ${error.message}`);
+    console.log(`❌ [${blogName} 썸네일] 웹 접속 실패: ${error.message}`);
     return null;
   }
 }
@@ -294,16 +296,31 @@ function createSummary(content, feedConfig = null, item = null) {
   return cleaned.length > 200 ? cleaned.substring(0, 200) + "..." : cleaned;
 }
 
-// 썸네일 URL 추출 (토스는 웹 스크래핑 사용)
-async function extractThumbnail(item) {
-  // 토스 블로그 특별 처리 - 웹 스크래핑으로 Open Graph 이미지 추출
-  if (item.link && item.link.includes("toss.tech")) {
-    console.log(`🔍 [토스 썸네일] 웹 스크래핑 시도: ${item.link}`);
-    const webThumbnail = await fetchThumbnailFromWeb(item.link);
-    if (webThumbnail) {
-      return webThumbnail;
+// 썸네일 URL 추출 (토스, 올리브영은 웹 스크래핑 사용)
+async function extractThumbnail(item, feedConfig = null) {
+  // 웹 스크래핑이 필요한 블로그들 처리
+  const webScrapingBlogs = [
+    { domain: "toss.tech", name: "토스" },
+    { domain: "oliveyoung.tech", name: "올리브영" },
+    { domain: "tech.kakao.com", name: "카카오" },
+    { domain: "tech.kakaopay.com", name: "카카오페이" },
+    { domain: "techblog.woowahan.com", name: "우아한형제들" },
+    { domain: "blog.banksalad.com", name: "뱅크샐러드" },
+    { domain: "tech.devsisters.com", name: "데브시스터즈" },
+  ];
+
+  for (const blog of webScrapingBlogs) {
+    if (item.link && item.link.includes(blog.domain)) {
+      console.log(`🔍 [${blog.name} 썸네일] 웹 스크래핑 시도: ${item.link}`);
+      const webThumbnail = await fetchThumbnailFromWeb(item.link, blog.name);
+      if (webThumbnail) {
+        return webThumbnail;
+      }
+      console.log(
+        `⚠️ [${blog.name} 썸네일] 웹 스크래핑 실패, 일반 방식으로 시도`
+      );
+      break; // 해당 블로그 처리 후 루프 종료
     }
-    console.log(`⚠️ [토스 썸네일] 웹 스크래핑 실패, 일반 방식으로 시도`);
   }
 
   // 1. enclosure 확인 (일반적인 RSS 첨부파일)
@@ -527,7 +544,7 @@ async function parseFeed(feedConfig) {
         author: feedConfig.name,
         external_url: normalizedUrl, // 정규화된 URL 사용
         published_at: pubDate.toISOString(),
-        thumbnail_url: await extractThumbnail(item), // 토스 웹 스크래핑을 위한 await 추가
+        thumbnail_url: await extractThumbnail(item, feedConfig),
         blog_type: feedConfig.type,
       };
 
