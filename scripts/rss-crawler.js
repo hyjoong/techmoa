@@ -157,6 +157,11 @@ const RSS_FEEDS = [
     url: "https://rss.blog.naver.com/pjt3591oo.xml",
     type: "personal",
   },
+  {
+    name: "황준일",
+    url: "https://junilhwang.github.io/TIL/rss.xml",
+    type: "personal",
+  },
 ];
 
 // Supabase 클라이언트 초기화
