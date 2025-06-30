@@ -4,7 +4,12 @@ import { createClient } from "@supabase/supabase-js";
 import Parser from "rss-parser";
 
 /**
- * RSS 피드 크롤러
+ * RSS 피드 크롤러 (중복 방지 개선 버전)
+ *
+ * 중복 방지 로직:
+ * 1. URL 정규화: RSS 파라미터(fromRss, trackingCode, source 등) 제거
+ * 2. 제목 정규화: 공백만 정리, 특수문자 유지로 과도한 정규화 방지
+ * 3. 중복 체크: URL 기준 + 작성자+제목 조합으로 이중 체크
  *
  * 새로운 블로그를 추가하려면:
  * 1. RSS_FEEDS 배열에 다음 형식으로 추가:
@@ -182,8 +187,58 @@ function stripHtml(html) {
   return html.replace(/<[^>]*>/g, "").trim();
 }
 
-// 요약문 생성 (첫 200자)
-function createSummary(content) {
+// Medium 전용 요약 추출 함수
+function createMediumSummary(item) {
+  // Medium RSS 피드에서 사용 가능한 콘텐츠 소스들 (우선순위 순)
+  const contentSources = [
+    item.contentSnippet,
+    item["content:encoded"],
+    item.content,
+    item.summary,
+    item.description,
+  ];
+
+  for (const content of contentSources) {
+    if (!content) continue;
+
+    let cleanedContent = stripHtml(content);
+
+    // Medium 특화 처리
+    if (content === item["content:encoded"] || content === item.content) {
+      // Medium HTML에서 첫 번째 문단 추출
+      const paragraphMatch = content.match(/<p[^>]*>(.*?)<\/p>/i);
+      if (paragraphMatch && paragraphMatch[1]) {
+        cleanedContent = stripHtml(paragraphMatch[1]);
+      }
+
+      // Medium의 subtitle 추출 시도
+      const subtitleMatch = content.match(
+        /<h3[^>]*class="[^"]*subtitle[^"]*"[^>]*>(.*?)<\/h3>/i
+      );
+      if (subtitleMatch && subtitleMatch[1]) {
+        cleanedContent = stripHtml(subtitleMatch[1]);
+      }
+    }
+
+    // 내용이 유효하면 요약 생성
+    if (cleanedContent && cleanedContent.trim().length > 10) {
+      return cleanedContent.length > 200
+        ? cleanedContent.substring(0, 200) + "..."
+        : cleanedContent;
+    }
+  }
+
+  return ""; // 요약을 찾을 수 없는 경우
+}
+
+// 요약문 생성 (Medium 피드 특화)
+function createSummary(content, feedConfig = null, item = null) {
+  // Medium 피드인 경우 특별 처리
+  if (feedConfig && feedConfig.url.includes("medium.com")) {
+    return createMediumSummary(item);
+  }
+
+  // 기존 로직
   if (!content) return "";
   const cleaned = stripHtml(content);
   return cleaned.length > 200 ? cleaned.substring(0, 200) + "..." : cleaned;
@@ -304,7 +359,7 @@ function extractThumbnail(item) {
 function normalizeUrl(url) {
   try {
     const urlObj = new URL(url);
-    // 쿼리 파라미터 제거 (utm_source, fbclid 등)
+    // 쿼리 파라미터 제거 (utm_source, fbclid, RSS 파라미터 등)
     const paramsToRemove = [
       "utm_source",
       "utm_medium",
@@ -313,6 +368,10 @@ function normalizeUrl(url) {
       "utm_term",
       "fbclid",
       "gclid",
+      "fromRss",
+      "trackingCode",
+      "source",
+      "rss",
     ];
     paramsToRemove.forEach((param) => urlObj.searchParams.delete(param));
 
@@ -334,14 +393,13 @@ function normalizeUrl(url) {
 // 제목 정규화 함수
 function normalizeTitle(title) {
   if (!title) return "";
-  return title
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, " ")
-    .replace(/[^\w\s가-힣]/g, ""); // 특수문자 제거
+
+  const result = title.toLowerCase().trim().replace(/\s+/g, " "); // 연속 공백만 정리, 특수문자는 유지
+
+  return result;
 }
 
-// 기존 데이터 확인 (강화된 버전)
+// 기존 데이터 확인
 async function getExistingData() {
   try {
     const { data, error } = await supabase
@@ -352,37 +410,31 @@ async function getExistingData() {
       console.error("❌ 기존 데이터 조회 실패:", error.message);
       return {
         urlSet: new Set(),
-        titleMap: new Map(),
         authorTitleMap: new Map(),
       };
     }
 
     const urlSet = new Set();
-    const titleMap = new Map(); // 제목 기반 중복 체크
     const authorTitleMap = new Map(); // 작성자+제목 기반 중복 체크
 
     data.forEach((item) => {
-      // URL 정규화 후 저장
+      // URL 정규화 후 저장 (기존 데이터도 정규화해서 비교)
       const normalizedUrl = normalizeUrl(item.external_url);
       urlSet.add(normalizedUrl);
 
-      // 제목 정규화 후 저장
+      // 제목 정규화 후 작성자+제목 조합으로 저장
       const normalizedTitle = normalizeTitle(item.title);
       if (normalizedTitle) {
-        titleMap.set(normalizedTitle, item);
-
-        // 작성자+제목 조합
         const authorTitle = `${item.author}:${normalizedTitle}`;
         authorTitleMap.set(authorTitle, item);
       }
     });
 
-    return { urlSet, titleMap, authorTitleMap };
+    return { urlSet, authorTitleMap };
   } catch (error) {
     console.error("❌ 기존 데이터 조회 중 오류:", error.message);
     return {
       urlSet: new Set(),
-      titleMap: new Map(),
       authorTitleMap: new Map(),
     };
   }
@@ -408,7 +460,9 @@ async function parseFeed(feedConfig) {
       const article = {
         title: (item.title || "제목 없음").trim(),
         summary: createSummary(
-          item.contentSnippet || item.content || item.summary
+          item.contentSnippet || item.content || item.summary,
+          feedConfig, // feedConfig 전달
+          item // item 전달
         ),
         author: feedConfig.name,
         external_url: normalizedUrl, // 정규화된 URL 사용
@@ -427,16 +481,16 @@ async function parseFeed(feedConfig) {
   }
 }
 
-// 중복 검사 함수 (강화된 버전)
+// 중복 검사 함수
 function isDuplicate(article, existingData) {
-  const { urlSet, titleMap, authorTitleMap } = existingData;
+  const { urlSet, authorTitleMap } = existingData;
 
-  // 1. URL 기반 중복 체크
+  // 1. URL 기반 중복 체크 (정규화된 URL로 비교)
   if (urlSet.has(article.external_url)) {
     return { isDuplicate: true, reason: "URL 중복", url: article.external_url };
   }
 
-  // 2. 작성자+제목 기반 중복 체크 (더 엄격)
+  // 2. 작성자+제목 기반 중복 체크 (메인 체크)
   const normalizedTitle = normalizeTitle(article.title);
   const authorTitle = `${article.author}:${normalizedTitle}`;
 
@@ -450,23 +504,10 @@ function isDuplicate(article, existingData) {
     };
   }
 
-  // 3. 제목만으로 중복 체크 (같은 제목이지만 다른 작성자는 허용)
-  if (titleMap.has(normalizedTitle)) {
-    const existing = titleMap.get(normalizedTitle);
-    // 같은 작성자인 경우에만 중복으로 간주
-    if (existing.author === article.author) {
-      return {
-        isDuplicate: true,
-        reason: "제목 중복 (같은 작성자)",
-        title: article.title,
-      };
-    }
-  }
-
   return { isDuplicate: false };
 }
 
-// Supabase에 데이터 삽입 (강화된 중복 체크)
+// Supabase에 데이터 삽입
 async function insertArticles(articles, existingData, feedName) {
   if (articles.length === 0) {
     console.log(`📝 [${feedName}] 삽입할 새로운 글이 없습니다.`);
@@ -477,7 +518,7 @@ async function insertArticles(articles, existingData, feedName) {
   const duplicateReasons = [];
   let duplicateCount = 0;
 
-  // 강화된 중복 체크
+  // 중복 체크
   for (const article of articles) {
     const duplicateCheck = isDuplicate(article, existingData);
 
@@ -495,7 +536,6 @@ async function insertArticles(articles, existingData, feedName) {
       existingData.urlSet.add(article.external_url);
       const normalizedTitle = normalizeTitle(article.title);
       if (normalizedTitle) {
-        existingData.titleMap.set(normalizedTitle, article);
         const authorTitle = `${article.author}:${normalizedTitle}`;
         existingData.authorTitleMap.set(authorTitle, article);
       }
@@ -537,11 +577,10 @@ async function insertArticles(articles, existingData, feedName) {
 
 // 메인 실행 함수
 async function main() {
-  console.log("🚀 RSS 크롤링 시작...");
   console.log(`📊 총 ${RSS_FEEDS.length}개의 피드를 처리합니다.`);
 
   try {
-    // 기존 데이터 가져오기 (강화된 중복 체크용)
+    // 기존 데이터 가져오기
     console.log("📋 기존 데이터 확인 중...");
     const existingData = await getExistingData();
     console.log(`📊 기존 글 수: ${existingData.urlSet.size}개`);
