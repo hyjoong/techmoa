@@ -17,7 +17,7 @@ export default function PrivacyPage() {
             개인정보 처리방침
           </h1>
           <p className="text-slate-600 dark:text-slate-400">
-            최종 업데이트: 2025년 6월 28일
+            최종 업데이트: 2025년 7월 1일
           </p>
         </div>
         <Card className="max-w-4xl mx-auto">
@@ -159,7 +159,8 @@ export default function PrivacyPage() {
                   <li>처리정지 요구</li>
                 </ul>
                 <p className="leading-relaxed mt-3">
-                  위의 권리 행사는 GitHub Issues를 통해 요청하실 수 있습니다.
+                  위의 권리 행사는 이메일(hyjoong12@gmail.com)을 통해 요청하실
+                  수 있습니다.
                 </p>
               </div>
             </section>
@@ -208,11 +209,7 @@ export default function PrivacyPage() {
                   <p className="leading-relaxed">
                     <strong>▶ 개인정보 보호책임자</strong>
                     <br />
-                    성명: 김현중
-                    <br />
-                    연락처: GitHub Issues를 통해 문의
-                    <br />
-                    이메일: GitHub 프로젝트 페이지를 통해 문의
+                    이메일: hyjoong12@gmail.com
                   </p>
                 </div>
               </div>
@@ -231,8 +228,9 @@ export default function PrivacyPage() {
 
             <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
               <p className="text-sm text-blue-800 dark:text-blue-200">
-                본 개인정보 처리방침에 대한 문의사항이 있으시면 GitHub Issues를
-                통해 연락해 주시기 바랍니다.
+                본 개인정보 처리방침에 대한 문의사항이 있으시면
+                이메일(hyjoong12@gmail.com) 또는 GitHub Issues를 통해 연락해
+                주시기 바랍니다.
               </p>
             </div>
           </CardContent>
