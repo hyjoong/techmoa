@@ -191,6 +191,52 @@ function stripHtml(html) {
   return html.replace(/<[^>]*>/g, "").trim();
 }
 
+// 웹 페이지에서 Open Graph 이미지 추출 (토스 전용)
+async function fetchThumbnailFromWeb(url) {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      },
+      timeout: 10000,
+    });
+
+    if (!response.ok) {
+      console.log(`❌ [토스 썸네일] HTTP 에러 ${response.status}: ${url}`);
+      return null;
+    }
+
+    const html = await response.text();
+
+    // Open Graph 이미지 추출
+    const ogImageMatch = html.match(
+      /<meta[^>]+property="og:image"[^>]+content="([^"]+)"[^>]*>/i
+    );
+    if (ogImageMatch && ogImageMatch[1]) {
+      console.log(`✅ [토스 썸네일] 웹에서 추출: ${ogImageMatch[1]}`);
+      return ogImageMatch[1];
+    }
+
+    // 다른 메타 이미지 태그들도 시도
+    const twitterImageMatch = html.match(
+      /<meta[^>]+name="twitter:image"[^>]+content="([^"]+)"[^>]*>/i
+    );
+    if (twitterImageMatch && twitterImageMatch[1]) {
+      console.log(
+        `✅ [토스 썸네일] 트위터 메타에서 추출: ${twitterImageMatch[1]}`
+      );
+      return twitterImageMatch[1];
+    }
+
+    console.log(`❌ [토스 썸네일] 메타 이미지 없음: ${url}`);
+    return null;
+  } catch (error) {
+    console.log(`❌ [토스 썸네일] 웹 접속 실패: ${error.message}`);
+    return null;
+  }
+}
+
 // Medium 전용 요약 추출 함수
 function createMediumSummary(item) {
   // Medium RSS 피드에서 사용 가능한 콘텐츠 소스들 (우선순위 순)
@@ -248,8 +294,18 @@ function createSummary(content, feedConfig = null, item = null) {
   return cleaned.length > 200 ? cleaned.substring(0, 200) + "..." : cleaned;
 }
 
-// 썸네일 URL 추출
-function extractThumbnail(item) {
+// 썸네일 URL 추출 (토스는 웹 스크래핑 사용)
+async function extractThumbnail(item) {
+  // 토스 블로그 특별 처리 - 웹 스크래핑으로 Open Graph 이미지 추출
+  if (item.link && item.link.includes("toss.tech")) {
+    console.log(`🔍 [토스 썸네일] 웹 스크래핑 시도: ${item.link}`);
+    const webThumbnail = await fetchThumbnailFromWeb(item.link);
+    if (webThumbnail) {
+      return webThumbnail;
+    }
+    console.log(`⚠️ [토스 썸네일] 웹 스크래핑 실패, 일반 방식으로 시도`);
+  }
+
   // 1. enclosure 확인 (일반적인 RSS 첨부파일)
   if (item.enclosure?.url && item.enclosure.type?.startsWith("image/")) {
     return item.enclosure.url;
@@ -471,7 +527,7 @@ async function parseFeed(feedConfig) {
         author: feedConfig.name,
         external_url: normalizedUrl, // 정규화된 URL 사용
         published_at: pubDate.toISOString(),
-        thumbnail_url: extractThumbnail(item),
+        thumbnail_url: await extractThumbnail(item), // 토스 웹 스크래핑을 위한 await 추가
         blog_type: feedConfig.type,
       };
 
