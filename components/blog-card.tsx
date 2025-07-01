@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Building2, Calendar, Eye, User } from "lucide-react";
 import Image from "next/image";
 import { incrementViews, type Blog } from "@/lib/supabase";
+import { getLogoUrl } from "@/lib/logos";
 import { useState } from "react";
-// import { CompanyLogo } from "./company-logo";
 
 interface BlogCardProps {
   blog: Blog;
@@ -44,6 +44,7 @@ export function BlogCard({ blog }: BlogCardProps) {
 
   // 썸네일 표시 여부 결정
   const shouldShowThumbnail = blog.thumbnail_url && !imageError;
+  const logoUrl = getLogoUrl(blog.author);
 
   return (
     <a
@@ -94,7 +95,15 @@ export function BlogCard({ blog }: BlogCardProps) {
                   : "text-muted-foreground"
               }`}
             >
-              {blog.blog_type === "company" ? (
+              {blog.blog_type === "company" && logoUrl ? (
+                <Image
+                  src={logoUrl}
+                  alt="logo"
+                  width={20}
+                  height={20}
+                  className="rounded"
+                />
+              ) : blog.blog_type === "company" ? (
                 <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               ) : (
                 <User className="h-4 w-4 text-primary flex-shrink-0" />

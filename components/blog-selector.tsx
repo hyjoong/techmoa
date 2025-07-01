@@ -9,7 +9,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Building2, User, Globe } from "lucide-react";
+import Image from "next/image";
 import { fetchAvailableBlogs } from "@/lib/supabase";
+import { getLogoUrl } from "@/lib/logos";
 
 interface BlogSelectorProps {
   selectedBlog: string;
@@ -100,18 +102,30 @@ export function BlogSelector({
           </div>
         </SelectItem>
 
-        {availableBlogs.map((blog) => (
-          <SelectItem key={blog.author} value={blog.author}>
-            <div className="flex items-center gap-2">
-              {blog.blog_type === "company" ? (
-                <Building2 className="h-4 w-4 text-muted-foreground" />
-              ) : (
-                <User className="h-4 w-4 text-muted-foreground" />
-              )}
-              {blog.author}
-            </div>
-          </SelectItem>
-        ))}
+        {availableBlogs.map((blog) => {
+          const logoUrl = getLogoUrl(blog.author);
+
+          return (
+            <SelectItem key={blog.author} value={blog.author}>
+              <div className="flex items-center gap-2">
+                {blog.blog_type === "company" && logoUrl ? (
+                  <Image
+                    src={logoUrl}
+                    alt="logo"
+                    width={16}
+                    height={16}
+                    className="rounded"
+                  />
+                ) : blog.blog_type === "company" ? (
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <User className="h-4 w-4 text-muted-foreground" />
+                )}
+                {blog.author}
+              </div>
+            </SelectItem>
+          );
+        })}
       </SelectContent>
     </Select>
   );
