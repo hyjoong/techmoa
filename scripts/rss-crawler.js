@@ -54,6 +54,12 @@ const RSS_FEEDS = [
     url: "https://techblog.woowahan.com/feed/",
     type: "company",
   },
+  { name: "네이버", url: "https://d2.naver.com/d2.atom", type: "company" },
+  {
+    name: "라인",
+    url: "https://techblog.lycorp.co.jp/ko/feed/index.xml",
+    type: "company",
+  },
   {
     name: "마켓컬리",
     url: "https://helloworld.kurly.com/feed.xml",
@@ -182,6 +188,7 @@ const parser = new Parser({
   headers: {
     "User-Agent":
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    Accept: "application/xml,application/atom+xml,text/xml",
   },
 });
 
@@ -307,6 +314,8 @@ async function extractThumbnail(item, feedConfig = null) {
     { domain: "techblog.woowahan.com", name: "우아한형제들" },
     { domain: "blog.banksalad.com", name: "뱅크샐러드" },
     { domain: "tech.devsisters.com", name: "데브시스터즈" },
+    { domain: "d2.naver.com", name: "네이버" },
+    { domain: "techblog.lycorp.co.jp", name: "라인" },
   ];
 
   for (const blog of webScrapingBlogs) {
