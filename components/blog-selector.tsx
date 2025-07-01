@@ -120,11 +120,14 @@ export function BlogSelector({
                 ) : blog.blog_type === "company" ? (
                   <Building2 className="h-4 w-4 text-muted-foreground" />
                 ) : (
-                  <span className="text-xs text-muted-foreground">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                )}
+                <span className="flex-1">{blog.author}</span>
+                {blog.blog_type === "personal" && blog.category && (
+                  <span className="text-xs text-muted-foreground leading-none flex items-center">
                     {blog.category}
                   </span>
                 )}
-                <span className="flex-1">{blog.author}</span>
               </div>
             </SelectItem>
           );
