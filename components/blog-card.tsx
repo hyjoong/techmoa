@@ -115,6 +115,11 @@ export function BlogCard({ blog }: BlogCardProps) {
               >
                 {blog.author}
               </span>
+              {blog.blog_type === "personal" && blog.category && (
+                <span className="text-xs text-muted-foreground">
+                  {blog.category}
+                </span>
+              )}
             </div>
           )}
 

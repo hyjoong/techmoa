@@ -23,6 +23,7 @@ interface BlogSelectorProps {
 interface Blog {
   author: string;
   blog_type: "company" | "personal";
+  category?: "FE" | "BE" | "AI" | "APP" | null;
 }
 
 export function BlogSelector({
@@ -119,9 +120,11 @@ export function BlogSelector({
                 ) : blog.blog_type === "company" ? (
                   <Building2 className="h-4 w-4 text-muted-foreground" />
                 ) : (
-                  <User className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">
+                    {blog.category}
+                  </span>
                 )}
-                {blog.author}
+                <span className="flex-1">{blog.author}</span>
               </div>
             </SelectItem>
           );
