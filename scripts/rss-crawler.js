@@ -127,41 +127,49 @@ const RSS_FEEDS = [
     name: "문동욱",
     url: "https://evan-moon.github.io/feed.xml",
     type: "personal",
+    category: "FE",
   },
   {
     name: "손수림",
     url: "https://api.velog.io/rss/@surim014",
     type: "personal",
+    category: "FE",
   },
   {
     name: "스벨트전도사",
     url: "https://api.velog.io/rss/@k-svelte-master",
     type: "personal",
+    category: "FE",
   },
   {
     name: "우혁",
     url: "https://api.velog.io/rss/@woogur29",
     type: "personal",
+    category: "FE",
   },
   {
     name: "정현수",
     url: "https://junghyeonsu.com/rss.xml",
     type: "personal",
+    category: "FE",
   },
   {
     name: "테오",
     url: "https://api.velog.io/rss/@teo",
     type: "personal",
+    category: "FE",
   },
   {
     name: "멍개",
     url: "https://rss.blog.naver.com/pjt3591oo.xml",
     type: "personal",
+    category: "AI",
   },
   {
     name: "황준일",
     url: "https://junilhwang.github.io/TIL/rss.xml",
     type: "personal",
+    category: "FE",
   },
 ];
 
@@ -555,6 +563,7 @@ async function parseFeed(feedConfig) {
         published_at: pubDate.toISOString(),
         thumbnail_url: await extractThumbnail(item, feedConfig),
         blog_type: feedConfig.type,
+        category: feedConfig.category || null,
       };
 
       articles.push(article);
