@@ -16,6 +16,7 @@ export interface Blog {
   external_url: string;
   views: number;
   blog_type: "company" | "personal";
+  category: "FE" | "BE" | "AI" | "APP" | null;
   created_at: string;
   updated_at: string;
 }
@@ -24,20 +25,21 @@ export interface Blog {
 interface AuthorInfo {
   author: string;
   blog_type: "company" | "personal";
+  category?: "FE" | "BE" | "AI" | "APP" | null;
 }
 
 // 사용 가능한 블로그 목록 조회 (기업/개인별)
 export async function fetchAvailableBlogs() {
   try {
-    // 간단하게 author 목록 조회 후 클라이언트에서 중복 제거
+    // 카테고리 정보를 포함하여 조회
     const { data: companyData, error: companyError } = await supabase
       .from("blogs")
-      .select("author")
+      .select("author, category")
       .eq("blog_type", "company");
 
     const { data: personalData, error: personalError } = await supabase
       .from("blogs")
-      .select("author")
+      .select("author, category")
       .eq("blog_type", "personal");
 
     if (companyError) {
@@ -48,19 +50,21 @@ export async function fetchAvailableBlogs() {
       throw new Error(`개인 블로그 목록 조회 실패: ${personalError.message}`);
     }
 
-    // 간단한 중복 제거 (크롤러가 이미 중복을 방지하므로 최소한만)
+    // 중복 제거하면서 카테고리 정보 유지
     const companies = Array.from(
-      new Set((companyData || []).map((item) => item.author))
-    ).map((author) => ({
+      new Map((companyData || []).map((item) => [item.author, item]))
+    ).map(([author, item]) => ({
       author,
       blog_type: "company" as const,
+      category: item.category,
     }));
 
     const individuals = Array.from(
-      new Set((personalData || []).map((item) => item.author))
-    ).map((author) => ({
+      new Map((personalData || []).map((item) => [item.author, item]))
+    ).map(([author, item]) => ({
       author,
       blog_type: "personal" as const,
+      category: item.category,
     }));
 
     // 기업 블로그를 사용자 접근성을 고려한 정렬 순서로 정렬
