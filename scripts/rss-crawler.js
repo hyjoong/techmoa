@@ -70,11 +70,6 @@ const RSS_FEEDS = [
     type: "company",
   },
   {
-    name: "이스트소프트",
-    url: "https://blog.est.ai/feed.xml",
-    type: "company",
-  },
-  {
     name: "하이퍼커넥트",
     url: "https://hyperconnect.github.io/feed.xml",
     type: "company",
