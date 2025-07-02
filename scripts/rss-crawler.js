@@ -123,6 +123,7 @@ const RSS_FEEDS = [
     type: "company",
   },
   // 개인 블로그
+  // FE
   {
     name: "문동욱",
     url: "https://evan-moon.github.io/feed.xml",
@@ -160,16 +161,24 @@ const RSS_FEEDS = [
     category: "FE",
   },
   {
+    name: "황준일",
+    url: "https://junilhwang.github.io/TIL/rss.xml",
+    type: "personal",
+    category: "FE",
+  },
+  // AI
+  {
     name: "멍개",
     url: "https://rss.blog.naver.com/pjt3591oo.xml",
     type: "personal",
     category: "AI",
   },
+  // APP
   {
-    name: "황준일",
-    url: "https://junilhwang.github.io/TIL/rss.xml",
+    name: "심야",
+    url: "https://api.velog.io/rss/@ximya_hf",
     type: "personal",
-    category: "FE",
+    category: "APP",
   },
 ];
 
