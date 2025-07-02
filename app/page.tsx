@@ -18,9 +18,11 @@ export default function HomePage() {
     selectedBlog,
     currentPage,
     sortBy,
+    viewMode,
     handleBlogTypeChange,
     handleBlogChange,
     handlePageChange,
+    handleViewModeChange,
     clearFilters,
     hasActiveFilters,
   } = useUrlFilters();
@@ -68,8 +70,10 @@ export default function HomePage() {
         totalPages={totalPages}
         totalCount={totalCount}
         currentPage={currentPage}
+        viewMode={viewMode}
         hasActiveFilters={hasActiveFilters}
         onPageChange={handlePageChangeWithScroll}
+        onViewModeChange={handleViewModeChange}
         onClearFilters={handleClearFilters}
       />
       <Footer />
