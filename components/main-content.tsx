@@ -98,6 +98,19 @@ export function MainContent({
               onSearchChange={onSearchChange}
             />
           </div>
+          {/* 검색 결과 개수 표시 */}
+          {searchQuery && (
+            <div className="mb-4 text-sm text-slate-600 dark:text-slate-400">
+              '
+              <span className="font-medium text-slate-900 dark:text-slate-100">
+                {searchQuery}
+              </span>
+              ' 검색 결과{" "}
+              <span className="font-semibold text-blue-600 dark:text-blue-400">
+                {totalCount}개
+              </span>
+            </div>
+          )}
           {/* 블로그 목록 */}
           {viewMode === "gallery" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
