@@ -6,7 +6,7 @@ import { MainContent } from "@/components/main-content";
 import { Footer } from "@/components/footer";
 import { useScrollToTop } from "@/hooks/use-scroll-to-top";
 import { useUrlFilters } from "@/hooks/use-url-filters";
-import { useBlogData } from "@/hooks/use-blog-data";
+import { useInfiniteBlogData } from "@/hooks/use-infinite-blog-data";
 
 export default function HomePage() {
   const router = useRouter();
@@ -27,11 +27,10 @@ export default function HomePage() {
     hasActiveFilters,
   } = useUrlFilters();
 
-  // 블로그 데이터 관리
-  const { blogs, loading, totalPages, totalCount } = useBlogData({
+  // 블로그 데이터 관리 (무한 스크롤)
+  const { blogs, loading, loadingMore, hasMore, totalCount, loadMore } = useInfiniteBlogData({
     blogType,
     selectedBlog,
-    currentPage,
     sortBy,
   });
 
@@ -53,7 +52,7 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       <Header
         blogType={blogType}
         selectedBlog={selectedBlog}
@@ -67,16 +66,17 @@ export default function HomePage() {
       <MainContent
         blogs={blogs}
         loading={loading}
-        totalPages={totalPages}
+        loadingMore={loadingMore}
+        hasMore={hasMore}
         totalCount={totalCount}
-        currentPage={currentPage}
         viewMode={viewMode}
         hasActiveFilters={hasActiveFilters}
-        onPageChange={handlePageChangeWithScroll}
+        onLoadMore={loadMore}
         onViewModeChange={handleViewModeChange}
         onClearFilters={handleClearFilters}
       />
-      <Footer />
+      {/* 모든 데이터를 로드했을 때만 푸터 표시 */}
+      {!hasMore && !loading && blogs.length > 0 && <Footer />}
     </div>
   );
 }

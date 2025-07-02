@@ -1,22 +1,19 @@
 import { BlogCard } from "@/components/blog-card";
 import { BlogListItem } from "@/components/blog-list-item";
-import { Pagination } from "@/components/pagination";
+import { InfiniteScrollTrigger } from "@/components/infinite-scroll-trigger";
 import { ViewToggle } from "@/components/view-toggle";
 import { Button } from "@/components/ui/button";
 import type { Blog } from "@/lib/supabase";
-import { useState } from "react";
-
-const ITEMS_PER_PAGE = 12;
 
 interface MainContentProps {
   blogs: Blog[];
   loading: boolean;
-  totalPages: number;
+  loadingMore?: boolean;
+  hasMore?: boolean;
   totalCount: number;
-  currentPage: number;
   viewMode: "gallery" | "list";
   hasActiveFilters: boolean;
-  onPageChange: (page: number) => void;
+  onLoadMore?: () => void;
   onViewModeChange: (mode: "gallery" | "list") => void;
   onClearFilters: () => void;
 }
@@ -24,17 +21,17 @@ interface MainContentProps {
 export function MainContent({
   blogs,
   loading,
-  totalPages,
+  loadingMore,
+  hasMore,
   totalCount,
-  currentPage,
   viewMode,
   hasActiveFilters,
-  onPageChange,
+  onLoadMore,
   onViewModeChange,
   onClearFilters,
 }: MainContentProps) {
   return (
-    <main className="container mx-auto px-4 pt-4">
+    <main className="container mx-auto px-4 pt-4 flex-1">
       {loading ? (
         <>
           {/* 뷰 토글 */}
@@ -108,16 +105,18 @@ export function MainContent({
             </div>
           )}
 
-          {totalPages > 1 && (
-            <div className="mt-12">
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalCount={totalCount}
-                itemsPerPage={ITEMS_PER_PAGE}
-                onPageChange={onPageChange}
-              />
-            </div>
+          {/* 무한 스크롤 트리거 */}
+          {onLoadMore && hasMore !== undefined && (
+            <InfiniteScrollTrigger
+              onLoadMore={onLoadMore}
+              hasMore={hasMore}
+              loading={loadingMore || false}
+            />
+          )}
+
+          {/* 푸터가 표시될 때 여백 추가 */}
+          {!hasMore && !loading && blogs.length > 0 && (
+            <div className="pb-16"></div>
           )}
         </>
       )}
