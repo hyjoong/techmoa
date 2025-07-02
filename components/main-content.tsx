@@ -12,9 +12,11 @@ interface MainContentProps {
   hasMore?: boolean;
   totalCount: number;
   viewMode: "gallery" | "list";
+  searchQuery: string;
   hasActiveFilters: boolean;
   onLoadMore?: () => void;
   onViewModeChange: (mode: "gallery" | "list") => void;
+  onSearchChange: (query: string) => void;
   onClearFilters: () => void;
 }
 
@@ -25,9 +27,11 @@ export function MainContent({
   hasMore,
   totalCount,
   viewMode,
+  searchQuery,
   hasActiveFilters,
   onLoadMore,
   onViewModeChange,
+  onSearchChange,
   onClearFilters,
 }: MainContentProps) {
   return (
@@ -35,10 +39,12 @@ export function MainContent({
       {loading ? (
         <>
           {/* 뷰 토글 */}
-          <div className="flex justify-end mb-4">
+          <div className="mb-4">
             <ViewToggle
               viewMode={viewMode}
               onViewModeChange={onViewModeChange}
+              searchQuery={searchQuery}
+              onSearchChange={onSearchChange}
             />
           </div>
           {/* 로딩 스켈레톤 */}
@@ -84,10 +90,12 @@ export function MainContent({
       ) : (
         <>
           {/* 뷰 토글 */}
-          <div className="flex justify-end mb-4">
+          <div className="mb-4">
             <ViewToggle
               viewMode={viewMode}
               onViewModeChange={onViewModeChange}
+              searchQuery={searchQuery}
+              onSearchChange={onSearchChange}
             />
           </div>
           {/* 블로그 목록 */}
