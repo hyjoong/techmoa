@@ -10,7 +10,6 @@ export interface Blog {
   title: string;
   summary: string | null;
   author: string;
-  tags: string[];
   published_at: string;
   thumbnail_url: string | null;
   external_url: string;
@@ -150,11 +149,11 @@ export async function fetchBlogs({
     query = query.eq("author", author.trim());
   }
 
-  // 검색 필터 (제목, 작성자, 태그에서 검색)
+  // 검색 필터 (제목, 작성자에서 검색)
   if (search && search.trim()) {
     const searchTerm = search.trim();
     query = query.or(
-      `title.ilike.%${searchTerm}%,author.ilike.%${searchTerm}%,tags.cs.{${searchTerm}}`
+      `title.ilike.%${searchTerm}%,author.ilike.%${searchTerm}%`
     );
   }
 

@@ -12,6 +12,7 @@ export interface UrlFilters {
   currentPage: number;
   sortBy: SortBy;
   viewMode: ViewMode;
+  searchQuery: string;
 }
 
 export interface UrlFiltersActions {
@@ -20,6 +21,7 @@ export interface UrlFiltersActions {
   handleBlogChange: (newBlog: string) => void;
   handlePageChange: (page: number) => void;
   handleViewModeChange: (mode: ViewMode) => void;
+  handleSearchChange: (query: string) => void;
   clearFilters: () => void;
   hasActiveFilters: boolean;
 }
@@ -34,6 +36,7 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   const sortBy = (searchParams.get("sort") as SortBy) || "published_at";
   const viewMode = (searchParams.get("view") as ViewMode) || "gallery";
+  const searchQuery = searchParams.get("q") || "";
 
   // URL 업데이트 함수
   const updateURL = (updates: Record<string, string | number | null>) => {
@@ -47,7 +50,8 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
         (key === "blog" && value === "all") ||
         (key === "page" && value === 1) ||
         (key === "sort" && value === "published_at") ||
-        (key === "view" && value === "gallery")
+        (key === "view" && value === "gallery") ||
+        (key === "q" && value === "")
       ) {
         params.delete(key);
       } else {
@@ -61,12 +65,18 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
 
   // 블로그 타입 변경 핸들러
   const handleBlogTypeChange = (newType: BlogType) => {
-    updateURL({ type: newType, blog: "all", page: 1, view: viewMode });
+    updateURL({
+      type: newType,
+      blog: "all",
+      page: 1,
+      view: viewMode,
+      q: searchQuery,
+    });
   };
 
   // 블로그 선택 변경 핸들러
   const handleBlogChange = (newBlog: string) => {
-    updateURL({ blog: newBlog, page: 1, view: viewMode });
+    updateURL({ blog: newBlog, page: 1, view: viewMode, q: searchQuery });
   };
 
   // 페이지 변경 핸들러
@@ -76,16 +86,22 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
 
   // 뷰 모드 변경 핸들러
   const handleViewModeChange = (mode: ViewMode) => {
-    updateURL({ view: mode });
+    updateURL({ view: mode, q: searchQuery });
+  };
+
+  // 검색 변경 핸들러
+  const handleSearchChange = (query: string) => {
+    updateURL({ q: query, page: 1 });
   };
 
   // 필터 초기화
   const clearFilters = () => {
-    updateURL({ type: "company", blog: "all", page: 1 });
+    updateURL({ type: "company", blog: "all", page: 1, q: "" });
   };
 
   // 활성 필터 확인
-  const hasActiveFilters = blogType !== "company" || selectedBlog !== "all";
+  const hasActiveFilters =
+    blogType !== "company" || selectedBlog !== "all" || searchQuery !== "";
 
   return {
     // 상태
@@ -94,12 +110,14 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
     currentPage,
     sortBy,
     viewMode,
+    searchQuery,
     // 액션
     updateURL,
     handleBlogTypeChange,
     handleBlogChange,
     handlePageChange,
     handleViewModeChange,
+    handleSearchChange,
     clearFilters,
     hasActiveFilters,
   };

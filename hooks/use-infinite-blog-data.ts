@@ -20,6 +20,7 @@ export interface InfiniteBlogDataFilters {
   blogType: BlogType;
   selectedBlog: string;
   sortBy: SortBy;
+  searchQuery: string;
 }
 
 export function useInfiniteBlogData(
@@ -46,6 +47,7 @@ export function useInfiniteBlogData(
         blogType: filters.blogType,
         author:
           filters.selectedBlog === "all" ? undefined : filters.selectedBlog,
+        search: filters.searchQuery || undefined,
       });
 
       setBlogs(result.blogs);
@@ -78,6 +80,7 @@ export function useInfiniteBlogData(
         blogType: filters.blogType,
         author:
           filters.selectedBlog === "all" ? undefined : filters.selectedBlog,
+        search: filters.searchQuery || undefined,
       });
 
       setBlogs((prev) => [...prev, ...result.blogs]);
@@ -98,7 +101,12 @@ export function useInfiniteBlogData(
   // 필터 변경 시 초기화
   useEffect(() => {
     loadInitialBlogs();
-  }, [filters.sortBy, filters.blogType, filters.selectedBlog]);
+  }, [
+    filters.sortBy,
+    filters.blogType,
+    filters.selectedBlog,
+    filters.searchQuery,
+  ]);
 
   return {
     blogs,
