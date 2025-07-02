@@ -19,20 +19,24 @@ export default function HomePage() {
     currentPage,
     sortBy,
     viewMode,
+    searchQuery,
     handleBlogTypeChange,
     handleBlogChange,
     handlePageChange,
     handleViewModeChange,
+    handleSearchChange,
     clearFilters,
     hasActiveFilters,
   } = useUrlFilters();
 
   // 블로그 데이터 관리 (무한 스크롤)
-  const { blogs, loading, loadingMore, hasMore, totalCount, loadMore } = useInfiniteBlogData({
-    blogType,
-    selectedBlog,
-    sortBy,
-  });
+  const { blogs, loading, loadingMore, hasMore, totalCount, loadMore } =
+    useInfiniteBlogData({
+      blogType,
+      selectedBlog,
+      sortBy,
+      searchQuery,
+    });
 
   // 로고 클릭 시 초기화
   const handleLogoClick = () => {
@@ -70,9 +74,11 @@ export default function HomePage() {
         hasMore={hasMore}
         totalCount={totalCount}
         viewMode={viewMode}
+        searchQuery={searchQuery}
         hasActiveFilters={hasActiveFilters}
         onLoadMore={loadMore}
         onViewModeChange={handleViewModeChange}
+        onSearchChange={handleSearchChange}
         onClearFilters={handleClearFilters}
       />
       {/* 모든 데이터를 로드했을 때만 푸터 표시 */}
