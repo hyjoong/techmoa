@@ -166,6 +166,7 @@ const RSS_FEEDS = [
     type: "personal",
     category: "FE",
   },
+
   // AI
   {
     name: "멍개",
@@ -502,33 +503,53 @@ function normalizeTitle(title) {
   return result;
 }
 
-// 기존 데이터 확인
+// 기존 데이터 확인 (모든 데이터 페이징으로 로드)
 async function getExistingData() {
   try {
-    const { data, error } = await supabase
-      .from("blogs")
-      .select("external_url, title, author, published_at");
-
-    if (error) {
-      console.error("❌ 기존 데이터 조회 실패:", error.message);
-      return {
-        urlSet: new Set(),
-        authorTitleMap: new Map(),
-      };
-    }
-
     const urlSet = new Set();
     const authorTitleMap = new Map(); // 작성자+제목 기반 중복 체크
 
-    data.forEach((item) => {
+    let allData = [];
+    let hasMore = true;
+    let offset = 0;
+    const pageSize = 1000;
+
+    console.log("📋 전체 데이터 로딩 중...");
+
+    while (hasMore) {
+      const { data, error } = await supabase
+        .from("blogs")
+        .select("external_url, title, author, published_at")
+        .range(offset, offset + pageSize - 1)
+        .order("id", { ascending: true });
+
+      if (error) {
+        console.error("❌ 기존 데이터 조회 실패:", error.message);
+        break;
+      }
+
+      if (data && data.length > 0) {
+        allData = allData.concat(data);
+        console.log(`   로드된 글: ${allData.length}개`);
+
+        // 마지막 페이지인지 확인
+        hasMore = data.length === pageSize;
+        offset += pageSize;
+      } else {
+        hasMore = false;
+      }
+    }
+
+    console.log(`✅ 전체 ${allData.length}개 글 로드 완료`);
+
+    allData.forEach((item) => {
       // URL 정규화 후 저장 (기존 데이터도 정규화해서 비교)
       const normalizedUrl = normalizeUrl(item.external_url);
       urlSet.add(normalizedUrl);
 
-      // 제목 정규화 후 작성자+제목 조합으로 저장
-      const normalizedTitle = normalizeTitle(item.title);
-      if (normalizedTitle) {
-        const authorTitle = `${item.author}:${normalizedTitle}`;
+      // 원본 제목으로 작성자+제목 조합 저장 (DB 제약조건과 일치)
+      if (item.title) {
+        const authorTitle = `${item.author}:${item.title}`;
         authorTitleMap.set(authorTitle, item);
       }
     });
@@ -594,9 +615,8 @@ function isDuplicate(article, existingData) {
     return { isDuplicate: true, reason: "URL 중복", url: article.external_url };
   }
 
-  // 2. 작성자+제목 기반 중복 체크 (메인 체크)
-  const normalizedTitle = normalizeTitle(article.title);
-  const authorTitle = `${article.author}:${normalizedTitle}`;
+  // 2. 작성자+제목 기반 중복 체크 (원본 제목 사용, DB 제약조건과 일치)
+  const authorTitle = `${article.author}:${article.title}`;
 
   if (authorTitleMap.has(authorTitle)) {
     const existing = authorTitleMap.get(authorTitle);
@@ -638,9 +658,8 @@ async function insertArticles(articles, existingData, feedName) {
 
       // 메모리상 existingData 업데이트 (같은 크롤링 세션 내 중복 방지)
       existingData.urlSet.add(article.external_url);
-      const normalizedTitle = normalizeTitle(article.title);
-      if (normalizedTitle) {
-        const authorTitle = `${article.author}:${normalizedTitle}`;
+      if (article.title) {
+        const authorTitle = `${article.author}:${article.title}`;
         existingData.authorTitleMap.set(authorTitle, article);
       }
     }
