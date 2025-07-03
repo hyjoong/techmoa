@@ -166,7 +166,13 @@ const RSS_FEEDS = [
     type: "personal",
     category: "FE",
   },
-
+  // BE
+  {
+    name: "향로",
+    url: "https://jojoldu.tistory.com/rss",
+    type: "personal",
+    category: "BE",
+  },
   // AI
   {
     name: "멍개",
