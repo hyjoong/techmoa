@@ -35,7 +35,7 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
   const selectedBlog = searchParams.get("blog") || "all";
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   const sortBy = (searchParams.get("sort") as SortBy) || "published_at";
-  const viewMode = (searchParams.get("view") as ViewMode) || "gallery";
+  const viewMode = (searchParams.get("view") as ViewMode) || "list";
   const searchQuery = searchParams.get("q") || "";
 
   // URL 업데이트 함수
@@ -50,7 +50,7 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
         (key === "blog" && value === "all") ||
         (key === "page" && value === 1) ||
         (key === "sort" && value === "published_at") ||
-        (key === "view" && value === "gallery") ||
+        (key === "view" && value === "list") ||
         (key === "q" && value === "")
       ) {
         params.delete(key);
