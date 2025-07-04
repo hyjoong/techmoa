@@ -24,6 +24,7 @@ export const logoMap: Record<string, string> = {
   콴다: "/logos/qanda.ico",
   네이버: "/logos/naver.ico",
   라인: "/logos/line.ico",
+  레브잇: "/logos/levit.ico",
 };
 
 // 로고 URL을 가져오는 헬퍼 함수
