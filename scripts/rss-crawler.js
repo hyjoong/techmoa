@@ -102,6 +102,11 @@ const RSS_FEEDS = [
     type: "company",
   },
   {
+    name: "여기어때",
+    url: "https://techblog.gccompany.co.kr/feed/tagged/tech",
+    type: "company",
+  },
+  {
     name: "요기요",
     url: "https://medium.com/feed/deliverytechkorea",
     type: "company",
@@ -127,6 +132,7 @@ const RSS_FEEDS = [
     url: "https://medium.com/feed/mathpresso/tagged/frontend",
     type: "company",
   },
+
   // 개인 블로그
   // FE
   {
