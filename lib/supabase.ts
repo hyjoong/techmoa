@@ -79,6 +79,7 @@ export async function fetchAvailableBlogs() {
       "올리브영",
       "마켓컬리",
       "레브잇",
+      "여기어때",
       "쏘카",
       "29CM",
       "하이퍼커넥트",
