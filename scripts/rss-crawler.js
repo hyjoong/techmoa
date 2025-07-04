@@ -178,6 +178,12 @@ const RSS_FEEDS = [
     type: "personal",
     category: "BE",
   },
+  {
+    name: "망나니개발자",
+    url: "https://mangkyu.tistory.com/rss",
+    type: "personal",
+    category: "BE",
+  },
   // AI
   {
     name: "멍개",
