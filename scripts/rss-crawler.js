@@ -97,6 +97,11 @@ const RSS_FEEDS = [
     type: "company",
   },
   {
+    name: "레브잇",
+    url: "https://medium.com/feed/%EB%A0%88%EB%B8%8C%EC%9E%87-%ED%85%8C%ED%81%AC%EB%B8%94%EB%A1%9C%EA%B7%B8",
+    type: "company",
+  },
+  {
     name: "요기요",
     url: "https://medium.com/feed/deliverytechkorea",
     type: "company",
