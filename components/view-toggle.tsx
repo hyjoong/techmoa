@@ -32,15 +32,6 @@ export function ViewToggle({
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-2 p-1 bg-muted rounded-lg">
           <Button
-            variant={viewMode === "list" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => onViewModeChange("list")}
-            className="flex items-center gap-2"
-          >
-            <List className="h-4 w-4" />
-            <span className="hidden sm:inline">목록</span>
-          </Button>
-          <Button
             variant={viewMode === "gallery" ? "default" : "ghost"}
             size="sm"
             onClick={() => onViewModeChange("gallery")}
@@ -48,6 +39,15 @@ export function ViewToggle({
           >
             <Grid3X3 className="h-4 w-4" />
             <span className="hidden sm:inline">갤러리</span>
+          </Button>
+          <Button
+            variant={viewMode === "list" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => onViewModeChange("list")}
+            className="flex items-center gap-2"
+          >
+            <List className="h-4 w-4" />
+            <span className="hidden sm:inline">목록</span>
           </Button>
         </div>
         <a
