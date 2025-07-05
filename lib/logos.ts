@@ -25,6 +25,8 @@ export const logoMap: Record<string, string> = {
   네이버: "/logos/naver.ico",
   라인: "/logos/line.ico",
   레브잇: "/logos/levit.ico",
+  여기어때: "/logos/gccompany.ico",
+  AB180: "/logos/ab180.ico",
 };
 
 // 로고 URL을 가져오는 헬퍼 함수

@@ -88,6 +88,7 @@ export async function fetchAvailableBlogs() {
       "콴다",
       "왓챠",
       "쿠팡",
+      "AB180",
       "에잇퍼센트",
       "요기요",
       "원티드",
