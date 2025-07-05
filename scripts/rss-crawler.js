@@ -132,6 +132,11 @@ const RSS_FEEDS = [
     url: "https://medium.com/feed/mathpresso/tagged/frontend",
     type: "company",
   },
+  {
+    name: "AB180",
+    url: "https://raw.githubusercontent.com/ab180/engineering-blog-rss-scheduler/main/rss.xml",
+    type: "company",
+  },
 
   // 개인 블로그
   // FE
