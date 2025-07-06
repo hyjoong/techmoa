@@ -56,7 +56,8 @@ async function validateRssFeed(url) {
     const response = await axios.get(url, {
       timeout: 10000,
       headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       },
     });
 
@@ -69,19 +70,8 @@ async function validateRssFeed(url) {
     }
 
     const contentType = response.headers["content-type"] || "";
-    if (
-      !contentType.includes("xml") &&
-      !contentType.includes("rss") &&
-      !contentType.includes("atom")
-    ) {
-      return {
-        url,
-        valid: false,
-        error: `잘못된 Content-Type: ${contentType}`,
-      };
-    }
 
-    // XML 파싱 테스트
+    // XML 파싱 테스트 (Content-Type 체크보다 우선)
     try {
       const parser = new xml2js.Parser();
       const result = await parser.parseStringPromise(response.data);
@@ -96,14 +86,36 @@ async function validateRssFeed(url) {
         };
       }
 
+      // Content-Type 경고 (GitHub raw 파일 등의 경우)
+      const isValidContentType =
+        contentType.includes("xml") ||
+        contentType.includes("rss") ||
+        contentType.includes("atom");
+
       return {
         url,
         valid: true,
         status: response.status,
         contentType: contentType,
         structure: result.rss ? "RSS" : "Atom",
+        warning: !isValidContentType
+          ? `Content-Type이 ${contentType}이지만 유효한 RSS 피드입니다.`
+          : null,
       };
     } catch (parseError) {
+      // XML 파싱 실패 시 Content-Type 체크
+      if (
+        !contentType.includes("xml") &&
+        !contentType.includes("rss") &&
+        !contentType.includes("atom")
+      ) {
+        return {
+          url,
+          valid: false,
+          error: `잘못된 Content-Type: ${contentType}`,
+        };
+      }
+
       return {
         url,
         valid: false,
@@ -131,14 +143,16 @@ async function main() {
     } else {
       urls = extractRssUrls();
       console.log(`📊 총 ${urls.length}개의 RSS 피드를 검사합니다.\n`);
-      
+
       // GitHub Actions 환경에서 우아한형제들 RSS 피드 제외
       if (process.env.GITHUB_ACTIONS) {
         const originalCount = urls.length;
-        urls = urls.filter(url => !url.includes("techblog.woowahan.com"));
+        urls = urls.filter((url) => !url.includes("techblog.woowahan.com"));
         const excludedCount = originalCount - urls.length;
         if (excludedCount > 0) {
-          console.log(`🔧 GitHub Actions 환경: 우아한형제들 RSS 피드 ${excludedCount}개 제외됨`);
+          console.log(
+            `🔧 GitHub Actions 환경: 우아한형제들 RSS 피드 ${excludedCount}개 제외됨`
+          );
         }
       }
     }
@@ -158,6 +172,9 @@ async function main() {
           console.log(
             `   └─ 구조: ${result.structure}, Content-Type: ${result.contentType}`
           );
+          if (result.warning) {
+            console.log(`   ⚠️  ${result.warning}`);
+          }
         }
       } else {
         invalidCount++;
