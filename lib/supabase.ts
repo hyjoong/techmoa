@@ -236,3 +236,22 @@ export async function incrementViews(id: number) {
     console.error("조회수 증가 실패:", error.message);
   }
 }
+
+// 주간 인기글 조회
+export async function fetchWeeklyPopularBlogs(limit = 5) {
+  const oneWeekAgo = new Date();
+  oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+  const { data, error } = await supabase
+    .from("blogs")
+    .select("*")
+    .gte("published_at", oneWeekAgo.toISOString())
+    .order("views", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error(`주간 인기글 조회 실패: ${error.message}`);
+  }
+
+  return data as Blog[];
+}

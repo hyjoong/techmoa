@@ -4,6 +4,7 @@ import { InfiniteScrollTrigger } from "@/components/infinite-scroll-trigger";
 import { ViewToggle } from "@/components/view-toggle";
 import { Button } from "@/components/ui/button";
 import type { Blog } from "@/lib/supabase";
+import { ChevronLeft } from "lucide-react";
 
 interface MainContentProps {
   blogs: Blog[];
@@ -14,10 +15,12 @@ interface MainContentProps {
   viewMode: "gallery" | "list";
   searchQuery: string;
   hasActiveFilters: boolean;
+  isWeeklyExpanded: boolean;
   onLoadMore?: () => void;
   onViewModeChange: (mode: "gallery" | "list") => void;
   onSearchChange: (query: string) => void;
   onClearFilters: () => void;
+  onWeeklyToggle: () => void;
 }
 
 export function MainContent({
@@ -29,27 +32,44 @@ export function MainContent({
   viewMode,
   searchQuery,
   hasActiveFilters,
+  isWeeklyExpanded,
   onLoadMore,
   onViewModeChange,
   onSearchChange,
   onClearFilters,
+  onWeeklyToggle,
 }: MainContentProps) {
   return (
-    <main className="container mx-auto px-4 pt-4 flex-1">
+    <main className="flex-1 pt-4">
       {loading ? (
         <>
           {/* 뷰 토글 */}
-          <div className="mb-4">
+          <div className="mb-4 flex items-center gap-4">
             <ViewToggle
               viewMode={viewMode}
               onViewModeChange={onViewModeChange}
               searchQuery={searchQuery}
               onSearchChange={onSearchChange}
             />
+            {!isWeeklyExpanded && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onWeeklyToggle}
+                className="hidden xl:flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                주간 인기글 보기
+              </Button>
+            )}
           </div>
           {/* 로딩 스켈레톤 */}
           {viewMode === "gallery" ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div
+              className={`grid grid-cols-1 md:grid-cols-2 ${
+                isWeeklyExpanded ? "xl:grid-cols-2" : "xl:grid-cols-3"
+              } gap-8`}
+            >
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="animate-pulse">
                   <div className="bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 rounded-2xl h-80"></div>
@@ -90,13 +110,24 @@ export function MainContent({
       ) : (
         <>
           {/* 뷰 토글 */}
-          <div className="mb-4">
+          <div className="mb-4 flex items-center gap-4">
             <ViewToggle
               viewMode={viewMode}
               onViewModeChange={onViewModeChange}
               searchQuery={searchQuery}
               onSearchChange={onSearchChange}
             />
+            {!isWeeklyExpanded && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onWeeklyToggle}
+                className="hidden xl:flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                주간 인기글 보기
+              </Button>
+            )}
           </div>
           {/* 검색 결과 개수 표시 */}
           {searchQuery && (
@@ -113,7 +144,11 @@ export function MainContent({
           )}
           {/* 블로그 목록 */}
           {viewMode === "gallery" ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div
+              className={`grid grid-cols-1 md:grid-cols-2 ${
+                isWeeklyExpanded ? "xl:grid-cols-2" : "xl:grid-cols-3"
+              } gap-8`}
+            >
               {blogs.map((blog) => (
                 <BlogCard key={blog.id} blog={blog} />
               ))}

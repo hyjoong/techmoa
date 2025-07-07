@@ -41,6 +41,17 @@ export function Header({
 
           {/* 필터들 */}
           <div className="flex items-center gap-3">
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClearFilters}
+                className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"
+              >
+                <RotateCcw className="h-4 w-4 mr-1" />
+                <span>초기화</span>
+              </Button>
+            )}
             <BlogTypeToggle
               blogType={blogType}
               onBlogTypeChange={onBlogTypeChange}
@@ -50,18 +61,6 @@ export function Header({
               onBlogChange={onBlogChange}
               blogType={blogType}
             />
-
-            {hasActiveFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClearFilters}
-                className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
-            )}
-
             <ThemeToggle />
           </div>
         </div>
@@ -83,6 +82,17 @@ export function Header({
 
           {/* 두 번째 줄: 필터들 */}
           <div className="flex items-center justify-between gap-2">
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClearFilters}
+                className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"
+              >
+                <RotateCcw className="h-4 w-4" />
+                <span className="sr-only">초기화</span>
+              </Button>
+            )}
             <BlogTypeToggle
               blogType={blogType}
               onBlogTypeChange={onBlogTypeChange}
@@ -92,17 +102,6 @@ export function Header({
               onBlogChange={onBlogChange}
               blogType={blogType}
             />
-
-            {hasActiveFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClearFilters}
-                className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
-            )}
           </div>
         </div>
       </div>
