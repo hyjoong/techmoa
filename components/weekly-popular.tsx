@@ -1,4 +1,4 @@
-import { Blog } from "@/lib/supabase";
+import { Blog, incrementViews } from "@/lib/supabase";
 import Link from "next/link";
 import Image from "next/image";
 import { getLogoUrl } from "@/lib/logos";
@@ -34,6 +34,15 @@ const rankStyles: { [key: number]: string } = {
 };
 
 export function WeeklyPopular({ blogs }: WeeklyPopularProps) {
+  const handleLinkClick = async (blogId: number) => {
+    // 조회수 증가 (백그라운드에서 실행)
+    try {
+      incrementViews(blogId);
+    } catch (error) {
+      console.error("조회수 증가 실패:", error);
+    }
+  };
+
   return (
     <div className="hidden xl:block w-96 flex-shrink-0">
       <div className="sticky top-24">
@@ -47,6 +56,7 @@ export function WeeklyPopular({ blogs }: WeeklyPopularProps) {
               href={blog.external_url}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => handleLinkClick(blog.id)}
             >
               <div className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors p-4 -mx-4">
                 <div className="flex items-start gap-4">
