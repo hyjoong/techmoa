@@ -6,6 +6,10 @@ on:
     - cron: "0 19 * * *" # 한국 시간 오후 7시
   workflow_dispatch: # 수동 실행 가능
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   monitor-rss:
     runs-on: ubuntu-latest
