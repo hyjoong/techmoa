@@ -114,9 +114,11 @@ export function UserMenu({ onLoginClick }: UserMenuProps) {
           <User className="mr-2 h-4 w-4" />
           <span>프로필</span>
         </DropdownMenuItem>
-        <DropdownMenuItem>
-          <Bookmark className="mr-2 h-4 w-4" />
-          <span>북마크</span>
+        <DropdownMenuItem asChild>
+          <a href="/bookmarks">
+            <Bookmark className="mr-2 h-4 w-4" />
+            <span>북마크</span>
+          </a>
         </DropdownMenuItem>
         <DropdownMenuItem>
           <History className="mr-2 h-4 w-4" />

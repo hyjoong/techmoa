@@ -16,10 +16,10 @@ export function SearchBar({
   onChange,
   placeholder = "검색...",
 }: SearchBarProps) {
-  const [inputValue, setInputValue] = useState(value);
+  const [inputValue, setInputValue] = useState(value || "");
 
   useEffect(() => {
-    setInputValue(value);
+    setInputValue(value || "");
   }, [value]);
 
   const handleSearch = () => {
@@ -63,7 +63,7 @@ export function SearchBar({
       <Button
         onClick={handleSearch}
         className="px-4 h-12 hidden sm:block"
-        disabled={!inputValue.trim()}
+        disabled={!(inputValue?.trim() || "")}
       >
         검색
       </Button>
