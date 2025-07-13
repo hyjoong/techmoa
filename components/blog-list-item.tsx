@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
+import { BookmarkButton } from "@/components/bookmark-button";
 import { Building2, Calendar, Eye, User } from "lucide-react";
 import Image from "next/image";
 import { incrementViews, type Blog } from "@/lib/supabase";
@@ -9,9 +10,10 @@ import { useState } from "react";
 
 interface BlogListItemProps {
   blog: Blog;
+  onLoginClick: () => void;
 }
 
-export function BlogListItem({ blog }: BlogListItemProps) {
+export function BlogListItem({ blog, onLoginClick }: BlogListItemProps) {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -46,13 +48,14 @@ export function BlogListItem({ blog }: BlogListItemProps) {
   const logoUrl = getLogoUrl(blog.author);
 
   return (
-    <a
-      href={blog.external_url}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={handleLinkClick}
-      className="block group"
-    >
+    <div className="relative group">
+      <a
+        href={blog.external_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={handleLinkClick}
+        className="block"
+      >
       <Card className="cursor-pointer card-hover border border-border/20 shadow-sm hover:shadow-md bg-card dark:bg-card/80 backdrop-blur-sm dark:backdrop-blur-none rounded-lg overflow-hidden">
         <CardContent className="p-6">
           <div className="flex gap-6">
@@ -140,6 +143,12 @@ export function BlogListItem({ blog }: BlogListItemProps) {
           </div>
         </CardContent>
       </Card>
-    </a>
+      </a>
+      
+      {/* 북마크 버튼 */}
+      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <BookmarkButton blogId={blog.id} onLoginClick={onLoginClick} />
+      </div>
+    </div>
   );
 }
