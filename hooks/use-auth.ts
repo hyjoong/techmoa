@@ -8,6 +8,7 @@ import {
   getUserProfile,
   onAuthStateChange,
   UserProfile,
+  upsertUserProfile,
 } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 
@@ -95,20 +96,17 @@ export function useAuth() {
     });
 
     return () => subscription.unsubscribe();
-  }, [toast]);
+  }, [toast, isInitialized]);
 
   // 프로필 업데이트
   const updateProfile = async (updates: Partial<UserProfile>) => {
     if (!authState.user) return;
 
     try {
-      const { profile, error } = await import("@/lib/auth").then(
-        ({ upsertUserProfile }) =>
-          upsertUserProfile({
-            id: authState.user!.id,
-            ...updates,
-          })
-      );
+      const { profile, error } = await upsertUserProfile({
+        id: authState.user!.id,
+        ...updates,
+      });
 
       if (error) throw error;
 

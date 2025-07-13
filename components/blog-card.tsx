@@ -112,7 +112,7 @@ export function BlogCard({ blog, onLoginClick }: BlogCardProps) {
                   <User className="h-4 w-4 text-primary flex-shrink-0" />
                 )}
                 <span
-                  className={`$${
+                  className={`${
                     blog.blog_type === "personal" ? "font-medium" : ""
                   } truncate`}
                 >

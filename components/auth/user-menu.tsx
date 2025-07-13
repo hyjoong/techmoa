@@ -44,7 +44,7 @@ export function UserMenu({ onLoginClick }: UserMenuProps) {
         title: "로그아웃",
         description: "안전하게 로그아웃되었습니다.",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error("로그아웃 실패:", error);
       toast({
         title: "오류",
@@ -70,7 +70,12 @@ export function UserMenu({ onLoginClick }: UserMenuProps) {
 
   if (!isAuthenticated) {
     return (
-      <Button variant="ghost" size="sm" onClick={onLoginClick} className="p-2 h-auto">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onLoginClick}
+        className="p-2 h-auto"
+      >
         <User className="h-4 w-4" />
       </Button>
     );
