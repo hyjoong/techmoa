@@ -21,6 +21,7 @@ interface MainContentProps {
   onSearchChange: (query: string) => void;
   onClearFilters: () => void;
   onWeeklyToggle: () => void;
+  onLoginClick: () => void;
 }
 
 export function MainContent({
@@ -38,6 +39,7 @@ export function MainContent({
   onSearchChange,
   onClearFilters,
   onWeeklyToggle,
+  onLoginClick,
 }: MainContentProps) {
   return (
     <main className="flex-1 pt-4">
@@ -150,13 +152,21 @@ export function MainContent({
               } gap-8`}
             >
               {blogs.map((blog) => (
-                <BlogCard key={blog.id} blog={blog} />
+                <BlogCard
+                  key={blog.id}
+                  blog={blog}
+                  onLoginClick={onLoginClick}
+                />
               ))}
             </div>
           ) : (
             <div className="space-y-4">
               {blogs.map((blog) => (
-                <BlogListItem key={blog.id} blog={blog} />
+                <BlogListItem
+                  key={blog.id}
+                  blog={blog}
+                  onLoginClick={onLoginClick}
+                />
               ))}
             </div>
           )}

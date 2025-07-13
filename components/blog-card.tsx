@@ -1,6 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { BookmarkButton } from "@/components/bookmark-button";
 
 import { Building2, Calendar, Eye, User } from "lucide-react";
 import Image from "next/image";
@@ -10,9 +11,10 @@ import { useState } from "react";
 
 interface BlogCardProps {
   blog: Blog;
+  onLoginClick: () => void;
 }
 
-export function BlogCard({ blog }: BlogCardProps) {
+export function BlogCard({ blog, onLoginClick }: BlogCardProps) {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -47,100 +49,107 @@ export function BlogCard({ blog }: BlogCardProps) {
   const logoUrl = getLogoUrl(blog.author);
 
   return (
-    <a
-      href={blog.external_url}
-      target="_blank"
-      rel="noopener noreferrer"
-      onClick={handleLinkClick}
-      className="block group h-full"
-    >
-      <Card className="h-full flex flex-col cursor-pointer card-hover border border-border/20 shadow-lg hover:shadow-xl bg-card dark:bg-card/80 backdrop-blur-sm dark:backdrop-blur-none rounded-xl overflow-hidden">
-        {shouldShowThumbnail && (
-          <CardHeader className="p-0">
-            <div className="relative aspect-video overflow-hidden rounded-t-xl bg-muted">
-              {!imageLoaded && (
-                <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/50 animate-pulse" />
-              )}
-              <Image
-                src={blog.thumbnail_url!}
-                alt={blog.title}
-                fill
-                className={`object-cover group-hover:scale-105 transition-all duration-300 ${
-                  imageLoaded ? "opacity-100" : "opacity-0"
-                }`}
-                onLoad={() => setImageLoaded(true)}
-                onError={() => {
-                  console.log(`썸네일 로드 실패: ${blog.thumbnail_url}`);
-                  setImageError(true);
-                }}
-              />
-              {imageLoaded && (
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              )}
-            </div>
-          </CardHeader>
-        )}
-
-        <CardContent className="p-6 flex-1 flex flex-col">
-          <h3 className="font-semibold text-lg mb-3 line-clamp-2 group-hover:text-primary transition-colors duration-200">
-            {blog.title}
-          </h3>
-
-          {/* 작성자 정보 */}
-          {blog.author && (
-            <div
-              className={`flex items-center gap-2 mb-3 text-sm ${
-                blog.blog_type === "personal"
-                  ? "text-primary font-medium"
-                  : "text-muted-foreground"
-              }`}
-            >
-              {blog.blog_type === "company" && logoUrl ? (
+    <div className="relative group h-full">
+      <a
+        href={blog.external_url}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={handleLinkClick}
+        className="block h-full"
+      >
+        <Card className="h-full flex flex-col cursor-pointer card-hover border border-border/20 shadow-lg hover:shadow-xl bg-card dark:bg-card/80 backdrop-blur-sm dark:backdrop-blur-none rounded-xl overflow-hidden">
+          {shouldShowThumbnail && (
+            <CardHeader className="p-0">
+              <div className="relative aspect-video overflow-hidden rounded-t-xl bg-muted">
+                {!imageLoaded && (
+                  <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/50 animate-pulse" />
+                )}
                 <Image
-                  src={logoUrl}
-                  alt="logo"
-                  width={20}
-                  height={20}
-                  className="rounded"
+                  src={blog.thumbnail_url!}
+                  alt={blog.title}
+                  fill
+                  className={`object-cover group-hover:scale-105 transition-all duration-300 ${
+                    imageLoaded ? "opacity-100" : "opacity-0"
+                  }`}
+                  onLoad={() => setImageLoaded(true)}
+                  onError={() => {
+                    console.log(`썸네일 로드 실패: ${blog.thumbnail_url}`);
+                    setImageError(true);
+                  }}
                 />
-              ) : blog.blog_type === "company" ? (
-                <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              ) : (
-                <User className="h-4 w-4 text-primary flex-shrink-0" />
-              )}
-              <span
-                className={`$${
-                  blog.blog_type === "personal" ? "font-medium" : ""
-                } truncate`}
-              >
-                {blog.author}
-              </span>
-              {blog.blog_type === "personal" && blog.category && (
-                <span className="text-xs text-muted-foreground">
-                  {blog.category}
-                </span>
-              )}
-            </div>
+                {imageLoaded && (
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                )}
+              </div>
+            </CardHeader>
           )}
 
-          <p className="text-muted-foreground text-sm mb-4 line-clamp-3 flex-1 leading-relaxed">
-            {blog.summary || "요약이 없습니다."}
-          </p>
+          <CardContent className="p-6 flex-1 flex flex-col">
+            <h3 className="font-semibold text-lg mb-3 line-clamp-2 group-hover:text-primary transition-colors duration-200">
+              {blog.title}
+            </h3>
 
-          <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border/30 dark:border-border/50">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1">
-                <Calendar className="h-3 w-3" />
-                {formatDate(blog.published_at)}
+            {/* 작성자 정보 */}
+            {blog.author && (
+              <div
+                className={`flex items-center gap-2 mb-3 text-sm ${
+                  blog.blog_type === "personal"
+                    ? "text-primary font-medium"
+                    : "text-muted-foreground"
+                }`}
+              >
+                {blog.blog_type === "company" && logoUrl ? (
+                  <Image
+                    src={logoUrl}
+                    alt="logo"
+                    width={20}
+                    height={20}
+                    className="rounded"
+                  />
+                ) : blog.blog_type === "company" ? (
+                  <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                ) : (
+                  <User className="h-4 w-4 text-primary flex-shrink-0" />
+                )}
+                <span
+                  className={`${
+                    blog.blog_type === "personal" ? "font-medium" : ""
+                  } truncate`}
+                >
+                  {blog.author}
+                </span>
+                {blog.blog_type === "personal" && blog.category && (
+                  <span className="text-xs text-muted-foreground">
+                    {blog.category}
+                  </span>
+                )}
               </div>
-              <div className="flex items-center gap-1">
-                <Eye className="h-3 w-3" />
-                {formatViews(blog.views)}
+            )}
+
+            <p className="text-muted-foreground text-sm mb-4 line-clamp-3 flex-1 leading-relaxed">
+              {blog.summary || "요약이 없습니다."}
+            </p>
+
+            <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border/30 dark:border-border/50">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
+                  {formatDate(blog.published_at)}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Eye className="h-3 w-3" />
+                  {formatViews(blog.views)}
+                </div>
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-    </a>
+          </CardContent>
+        </Card>
+      </a>
+
+      {/* 북마크 버튼 */}
+      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <BookmarkButton blogId={blog.id} onLoginClick={onLoginClick} />
+      </div>
+    </div>
   );
 }
