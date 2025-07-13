@@ -12,9 +12,14 @@ import { useState } from "react";
 interface BlogCardProps {
   blog: Blog;
   onLoginClick: () => void;
+  onBookmarkRemoved?: () => void;
 }
 
-export function BlogCard({ blog, onLoginClick }: BlogCardProps) {
+export function BlogCard({
+  blog,
+  onLoginClick,
+  onBookmarkRemoved,
+}: BlogCardProps) {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -148,7 +153,11 @@ export function BlogCard({ blog, onLoginClick }: BlogCardProps) {
 
       {/* 북마크 버튼 */}
       <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        <BookmarkButton blogId={blog.id} onLoginClick={onLoginClick} />
+        <BookmarkButton
+          blogId={blog.id}
+          onLoginClick={onLoginClick}
+          onBookmarkRemoved={onBookmarkRemoved}
+        />
       </div>
     </div>
   );

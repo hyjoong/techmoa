@@ -1,22 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Bookmark } from "lucide-react";
+import {
+  addBookmark,
+  removeBookmark,
+  isBookmarked as checkIsBookmarked,
+} from "@/lib/bookmarks";
 
 interface BookmarkButtonProps {
   blogId: number;
   onLoginClick: () => void;
+  onBookmarkRemoved?: () => void;
 }
 
-export function BookmarkButton({ blogId, onLoginClick }: BookmarkButtonProps) {
+export function BookmarkButton({
+  blogId,
+  onLoginClick,
+  onBookmarkRemoved,
+}: BookmarkButtonProps) {
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleBookmarkClick = () => {
+  // 북마크 상태 확인
+  useEffect(() => {
+    if (isAuthenticated) {
+      checkBookmarkStatus();
+    }
+  }, [isAuthenticated, blogId]);
+
+  const checkBookmarkStatus = async () => {
+    try {
+      const bookmarked = await checkIsBookmarked(blogId);
+      setIsBookmarked(bookmarked);
+    } catch (error) {
+      console.error("북마크 상태 확인 실패:", error);
+    }
+  };
+
+  const handleBookmarkClick = async () => {
     if (!isAuthenticated) {
       // 로그인이 안 되어 있으면 로그인 모달 띄우기
       onLoginClick();
@@ -27,14 +54,41 @@ export function BookmarkButton({ blogId, onLoginClick }: BookmarkButtonProps) {
       return;
     }
 
-    // 로그인이 되어 있으면 북마크 토글 (임시 구현)
-    setIsBookmarked(!isBookmarked);
-    toast({
-      title: isBookmarked ? "북마크 해제" : "북마크 추가",
-      description: isBookmarked
-        ? "북마크에서 제거되었습니다."
-        : "북마크에 추가되었습니다.",
-    });
+    setLoading(true);
+    try {
+      if (isBookmarked) {
+        // 북마크 제거
+        const { error } = await removeBookmark(blogId);
+        if (error) throw error;
+
+        setIsBookmarked(false);
+        toast({
+          title: "북마크 해제",
+          description: "북마크에서 제거되었습니다.",
+        });
+        // 북마크 제거 콜백 호출
+        onBookmarkRemoved?.();
+      } else {
+        // 북마크 추가
+        const { error } = await addBookmark(blogId);
+        if (error) throw error;
+
+        setIsBookmarked(true);
+        toast({
+          title: "북마크 추가",
+          description: "북마크에 추가되었습니다.",
+        });
+      }
+    } catch (error: any) {
+      console.error("북마크 처리 실패:", error);
+      toast({
+        title: "오류",
+        description: error.message || "북마크 처리에 실패했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
