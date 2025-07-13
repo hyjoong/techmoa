@@ -96,7 +96,7 @@ export function useAuth() {
     });
 
     return () => subscription.unsubscribe();
-  }, [toast, isInitialized]);
+  }, [toast]);
 
   // 프로필 업데이트
   const updateProfile = async (updates: Partial<UserProfile>) => {
