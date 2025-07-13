@@ -59,7 +59,13 @@ cp .env.example .env.local
    -- Supabase SQL Editor에서 실행
    \i scripts/create-blogs-table.sql
    \i scripts/create-increment-views-function.sql
+   \i scripts/create-auth-tables.sql
    ```
+
+4. 인증 설정 (Supabase Dashboard):
+   - Authentication > Settings > Site URL 설정
+   - Authentication > Providers에서 Google, GitHub 등 소셜 로그인 설정
+   - Authentication > Email Templates 커스터마이징
 
 ### 3. 개발 서버 실행
 
