@@ -60,11 +60,11 @@ export function WeeklyPopular({ blogs }: WeeklyPopularProps) {
                 rel="noopener noreferrer"
                 onClick={() => handleLinkClick(blog.id)}
               >
-                <div className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors p-4 -mx-4">
+                <div className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors p-4 rounded-lg">
                   <div className="flex items-start gap-4">
                     {/* 등수 */}
                     <div
-                      className={`text-2xl font-bold ${
+                      className={`text-2xl font-bold w-8 text-center ${
                         rankStyles[(index + 1) as keyof typeof rankStyles]
                       }`}
                     >
