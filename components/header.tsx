@@ -3,6 +3,7 @@ import { BlogSelector } from "@/components/blog-selector";
 import { Button } from "@/components/ui/button";
 import { RotateCcw } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { UserMenu } from "@/components/auth/user-menu";
 import type { BlogType } from "@/hooks/use-url-filters";
 
 interface HeaderProps {
@@ -13,6 +14,7 @@ interface HeaderProps {
   onBlogChange: (blog: string) => void;
   onClearFilters: () => void;
   onLogoClick: () => void;
+  onLoginClick: () => void;
 }
 
 export function Header({
@@ -23,6 +25,7 @@ export function Header({
   onBlogChange,
   onClearFilters,
   onLogoClick,
+  onLoginClick,
 }: HeaderProps) {
   return (
     <div className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-900/60 border-b border-slate-200/50 dark:border-slate-700/50">
@@ -62,6 +65,7 @@ export function Header({
               blogType={blogType}
             />
             <ThemeToggle />
+            <UserMenu onLoginClick={onLoginClick} />
           </div>
         </div>
 
@@ -77,7 +81,10 @@ export function Header({
                 Techmoa
               </h1>
             </button>
-            <ThemeToggle />
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <UserMenu onLoginClick={onLoginClick} />
+            </div>
           </div>
 
           {/* 두 번째 줄: 필터들 */}
