@@ -37,63 +37,63 @@ jobs:
         env:
           NODE_OPTIONS: "--max-old-space-size=4096"
 
-      - name: Create issue for failed feeds
-        if: failure()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require('fs');
-            let results = [];
+      # - name: Create issue for failed feeds
+      #   if: failure()
+      #   uses: actions/github-script@v7
+      #   with:
+      #     script: |
+      #       const fs = require('fs');
+      #       let results = [];
 
-            try {
-              const data = fs.readFileSync('rss-validation-results.json', 'utf8');
-              results = JSON.parse(data);
-            } catch (error) {
-              console.log('결과 파일을 읽을 수 없습니다.');
-            }
+      #       try {
+      #         const data = fs.readFileSync('rss-validation-results.json', 'utf8');
+      #         results = JSON.parse(data);
+      #       } catch (error) {
+      #         console.log('결과 파일을 읽을 수 없습니다.');
+      #       }
 
-            const invalidFeeds = results.filter(r => !r.valid);
+      #       const invalidFeeds = results.filter(r => !r.valid);
 
-            if (invalidFeeds.length > 0) {
-              let issueBody = `## 🔍 RSS 피드 모니터링 결과\n\n`;
-              issueBody += `⚠️ **문제가 발견된 RSS 피드**: ${invalidFeeds.length}개\n\n`;
-              issueBody += `### 유효하지 않은 피드 목록:\n`;
-              
-              invalidFeeds.forEach(feed => {
-                issueBody += `- \`${feed.url}\`: ${feed.error}\n`;
-              });
-              
-              issueBody += `\n### 권장 조치사항:\n`;
-              issueBody += `1. RSS URL이 올바른지 확인\n`;
-              issueBody += `2. 해당 블로그 사이트가 정상 작동하는지 확인\n`;
-              issueBody += `3. 필요시 RSS 피드 URL 업데이트\n`;
-              issueBody += `4. 문제가 지속되면 해당 피드 제거 고려\n\n`;
-              issueBody += `---\n`;
-              issueBody += `*이 이슈는 자동으로 생성되었습니다.*`;
+      #       if (invalidFeeds.length > 0) {
+      #         let issueBody = `## 🔍 RSS 피드 모니터링 결과\n\n`;
+      #         issueBody += `⚠️ **문제가 발견된 RSS 피드**: ${invalidFeeds.length}개\n\n`;
+      #         issueBody += `### 유효하지 않은 피드 목록:\n`;
+      #
+      #         invalidFeeds.forEach(feed => {
+      #           issueBody += `- \`${feed.url}\`: ${feed.error}\n`;
+      #         });
+      #
+      #         issueBody += `\n### 권장 조치사항:\n`;
+      #         issueBody += `1. RSS URL이 올바른지 확인\n`;
+      #         issueBody += `2. 해당 블로그 사이트가 정상 작동하는지 확인\n`;
+      #         issueBody += `3. 필요시 RSS 피드 URL 업데이트\n`;
+      #         issueBody += `4. 문제가 지속되면 해당 피드 제거 고려\n\n`;
+      #         issueBody += `---\n`;
+      #         issueBody += `*이 이슈는 자동으로 생성되었습니다.*`;
 
-              // 기존 이슈가 있는지 확인
-              const { data: existingIssues } = await github.rest.issues.listForRepo({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                state: 'open',
-                labels: ['rss-monitoring']
-              });
+      #         // 기존 이슈가 있는지 확인
+      #         const { data: existingIssues } = await github.rest.issues.listForRepo({
+      #           owner: context.repo.owner,
+      #           repo: context.repo.repo,
+      #           state: 'open',
+      #           labels: ['rss-monitoring']
+      #         });
 
-              const hasRssIssue = existingIssues.some(issue => 
-                issue.title.includes('RSS 피드 모니터링') && 
-                issue.created_at > new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
-              );
+      #         const hasRssIssue = existingIssues.some(issue =>
+      #           issue.title.includes('RSS 피드 모니터링') &&
+      #           issue.created_at > new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+      #         );
 
-              if (!hasRssIssue) {
-                await github.rest.issues.create({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  title: '🔍 RSS 피드 모니터링 - 문제 발견',
-                  body: issueBody,
-                  labels: ['rss-monitoring', 'automated']
-                });
-              }
-            }
+      #         if (!hasRssIssue) {
+      #           await github.rest.issues.create({
+      #             owner: context.repo.owner,
+      #             repo: context.repo.repo,
+      #             title: '🔍 RSS 피드 모니터링 - 문제 발견',
+      #             body: issueBody,
+      #             labels: ['rss-monitoring', 'automated']
+      #           });
+      #         }
+      #       }
 
       - name: Upload validation results
         if: always()
