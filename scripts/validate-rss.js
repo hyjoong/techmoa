@@ -46,15 +46,22 @@ function extractRssUrls() {
   }
 }
 
-// RSS 피드 유효성 검사
-async function validateRssFeed(url) {
+// RSS 피드 유효성 검사 (재시도 로직 포함)
+async function validateRssFeed(url, retryCount = 0) {
+  const maxRetries = 2;
+  const retryDelay = 3000; // 3초 (429 에러 시에만 적용)
+
   try {
     if (verbose) {
-      console.log(`🔍 검사 중: ${url}`);
+      console.log(
+        `🔍 검사 중: ${url}${
+          retryCount > 0 ? ` (재시도 ${retryCount}/${maxRetries})` : ""
+        }`
+      );
     }
 
     const response = await axios.get(url, {
-      timeout: 10000,
+      timeout: 15000, // 타임아웃 증가
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -62,6 +69,15 @@ async function validateRssFeed(url) {
     });
 
     if (response.status !== 200) {
+      // 429 에러인 경우 재시도
+      if (response.status === 429 && retryCount < maxRetries) {
+        console.log(
+          `⚠️  ${url}: 429 에러 발생, ${retryDelay / 1000}초 후 재시도...`
+        );
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+        return validateRssFeed(url, retryCount + 1);
+      }
+
       return {
         url,
         valid: false,
@@ -123,6 +139,19 @@ async function validateRssFeed(url) {
       };
     }
   } catch (error) {
+    // 429 에러인 경우 재시도
+    if (
+      error.response &&
+      error.response.status === 429 &&
+      retryCount < maxRetries
+    ) {
+      console.log(
+        `⚠️  ${url}: 429 에러 발생, ${retryDelay / 1000}초 후 재시도...`
+      );
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      return validateRssFeed(url, retryCount + 1);
+    }
+
     return {
       url,
       valid: false,
@@ -183,7 +212,7 @@ async function main() {
 
       // API 부하 방지를 위한 간격
       if (urls.length > 1) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000)); // 기존 1초 유지
       }
     }
 
@@ -209,10 +238,21 @@ async function main() {
       "\n💾 검사 결과가 rss-validation-results.json에 저장되었습니다."
     );
 
-    // 실패한 피드가 있으면 에러로 종료
+    // 실패한 피드가 있으면 에러로 종료 (단, 429 에러만 있는 경우는 성공으로 처리)
+    const non429Errors = invalidFeeds.filter(
+      (feed) => !feed.error.includes("429")
+    );
+
     if (invalidCount > 0) {
-      console.log("\n❌ 일부 RSS 피드가 유효하지 않습니다.");
-      process.exit(1);
+      if (non429Errors.length === 0) {
+        console.log(
+          "\n⚠️  429 에러만 발생했습니다. 이는 일시적인 문제로 간주하여 성공으로 처리합니다."
+        );
+        process.exit(0);
+      } else {
+        console.log("\n❌ 일부 RSS 피드가 유효하지 않습니다.");
+        process.exit(1);
+      }
     } else {
       console.log("\n🎉 모든 RSS 피드가 유효합니다!");
       process.exit(0);
