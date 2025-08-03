@@ -2,8 +2,8 @@ name: RSS Data Crawler
 
 on:
   schedule:
-    - cron: "0 6 * * *" # 한국 시간 오전 10시
-    - cron: "0 19 * * *" # 한국 시간 오후 7시
+    - cron: "0 22 * * *" # 한국 시간 오전 7시
+    - cron: "0 10 * * *" # 한국 시간 오후 7시
   workflow_dispatch: # 수동 실행 가능
   push:
     branches:
