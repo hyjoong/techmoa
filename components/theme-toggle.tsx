@@ -34,6 +34,7 @@ export function ThemeToggle() {
         checked={isDark}
         onCheckedChange={handleToggle}
         className="data-[state=checked]:bg-slate-800 data-[state=unchecked]:bg-slate-200"
+        aria-label="테마 전환"
       />
       {/* 동그라미 안에 아이콘 */}
       <div className="absolute inset-y-0 left-0.5 flex items-center pointer-events-none">
