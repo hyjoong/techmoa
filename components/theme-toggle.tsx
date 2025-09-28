@@ -1,43 +1,48 @@
 "use client";
 
-import * as React from "react";
-import { Moon, Sun, Monitor } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
 
 export function ThemeToggle() {
-  const { setTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="h-6 w-11 rounded-full bg-slate-200 dark:bg-slate-700 animate-pulse" />
+      </div>
+    );
+  }
+
+  const isDark = resolvedTheme === "dark";
+
+  const handleToggle = () => {
+    setTheme(isDark ? "light" : "dark");
+  };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-9 w-9 px-0">
-          <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">테마 변경</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme("light")}>
-          <Sun className="mr-2 h-4 w-4" />
-          <span>라이트</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("dark")}>
-          <Moon className="mr-2 h-4 w-4" />
-          <span>다크</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme("system")}>
-          <Monitor className="mr-2 h-4 w-4" />
-          <span>시스템</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <div className="relative flex items-center">
+      <Switch
+        checked={isDark}
+        onCheckedChange={handleToggle}
+        className="data-[state=checked]:bg-slate-800 data-[state=unchecked]:bg-slate-200"
+        aria-label="테마 전환"
+      />
+      {/* 동그라미 안에 아이콘 */}
+      <div className="absolute inset-y-0 left-0.5 flex items-center pointer-events-none">
+        <div className={`flex items-center justify-center w-5 h-5 transition-transform duration-200 ease-in-out ${isDark ? 'translate-x-5' : 'translate-x-0'}`}>
+          <Sun className={`h-3 w-3 transition-all duration-200 ${isDark ? 'opacity-0 scale-75' : 'opacity-100 scale-100'} text-amber-600`} />
+          <Moon className={`h-3 w-3 transition-all duration-200 absolute ${isDark ? 'opacity-100 scale-100' : 'opacity-0 scale-75'} text-slate-600`} />
+        </div>
+      </div>
+    </div>
   );
 }
