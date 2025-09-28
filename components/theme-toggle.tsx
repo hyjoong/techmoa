@@ -7,7 +7,7 @@ import { useTheme } from "next-themes";
 import { Switch } from "@/components/ui/switch";
 
 export function ThemeToggle() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -23,20 +23,9 @@ export function ThemeToggle() {
   }
 
   const isDark = resolvedTheme === "dark";
-  const isSystemMode = theme === "system";
 
   const handleToggle = () => {
-    if (isSystemMode) {
-      // 시스템 모드일 때는 현재 resolvedTheme의 반대로 설정
-      setTheme(resolvedTheme === "dark" ? "light" : "dark");
-    } else {
-      // 수동 모드일 때는 단순 토글
-      setTheme(theme === "dark" ? "light" : "dark");
-    }
-  };
-
-  const handleSystemReset = () => {
-    setTheme("system");
+    setTheme(isDark ? "light" : "dark");
   };
 
   return (
