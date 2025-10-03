@@ -85,7 +85,7 @@ export default function HomePage() {
         onLoginClick={() => setAuthModalOpen(true)}
       />
 
-      <div className="flex-1 container mx-auto px-4 flex gap-8 pt-4">
+      <div className="container mx-auto px-4 flex gap-8 pt-24">
         <MainContent
           blogs={blogs}
           loading={loading}

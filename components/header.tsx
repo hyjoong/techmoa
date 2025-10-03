@@ -28,7 +28,7 @@ export function Header({
   onLoginClick,
 }: HeaderProps) {
   return (
-    <div className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-900/60 border-b border-slate-200/50 dark:border-slate-700/50">
+    <div className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-900/60 border-b border-slate-200/50 dark:border-slate-700/50">
       <div className="container mx-auto px-4 py-3">
         {/* 데스크톱 레이아웃 */}
         <div className="hidden sm:flex sm:items-center justify-between gap-3">
