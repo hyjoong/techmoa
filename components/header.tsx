@@ -1,9 +1,12 @@
+"use client";
+
 import { BlogTypeToggle } from "@/components/blog-type-toggle";
 import { BlogSelector } from "@/components/blog-selector";
 import { Button } from "@/components/ui/button";
 import { RotateCcw } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/auth/user-menu";
+import { isFlutterWebView } from "@/lib/webview-bridge";
 import type { BlogType } from "@/hooks/use-url-filters";
 
 interface HeaderProps {
@@ -65,7 +68,7 @@ export function Header({
               blogType={blogType}
             />
             <ThemeToggle />
-            <UserMenu onLoginClick={onLoginClick} />
+            {!isFlutterWebView() && <UserMenu onLoginClick={onLoginClick} />}
           </div>
         </div>
 
@@ -83,7 +86,7 @@ export function Header({
             </button>
             <div className="flex items-center gap-2">
               <ThemeToggle />
-              <UserMenu onLoginClick={onLoginClick} />
+              {!isFlutterWebView() && <UserMenu onLoginClick={onLoginClick} />}
             </div>
           </div>
 
