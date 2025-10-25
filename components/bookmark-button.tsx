@@ -10,6 +10,7 @@ import {
   removeBookmark,
   isBookmarked as checkIsBookmarked,
 } from "@/lib/bookmarks";
+import { isFlutterWebView } from "@/lib/webview-bridge";
 
 interface BookmarkButtonProps {
   blogId: number;
@@ -29,7 +30,8 @@ export function BookmarkButton({
 
   // 북마크 상태 확인
   useEffect(() => {
-    if (isAuthenticated) {
+    // 웹뷰 환경이거나 로그인된 경우 북마크 상태 확인
+    if (isFlutterWebView() || isAuthenticated) {
       checkBookmarkStatus();
     }
   }, [isAuthenticated, blogId]);
@@ -44,7 +46,8 @@ export function BookmarkButton({
   };
 
   const handleBookmarkClick = async () => {
-    if (!isAuthenticated) {
+    // 웹뷰가 아닌 환경에서 로그인 체크
+    if (!isFlutterWebView() && !isAuthenticated) {
       // 로그인이 안 되어 있으면 로그인 모달 띄우기
       onLoginClick();
       toast({
@@ -96,6 +99,7 @@ export function BookmarkButton({
       variant="ghost"
       size="sm"
       onClick={handleBookmarkClick}
+      disabled={loading}
       className={`p-2 h-auto ${
         isBookmarked
           ? "text-yellow-500 hover:text-yellow-600"
