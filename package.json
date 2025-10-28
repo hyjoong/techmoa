@@ -12,10 +12,12 @@
     "validate-rss": "node scripts/validate-rss.js",
     "validate-rss:verbose": "node scripts/validate-rss.js --verbose",
     "test:rss": "node scripts/validate-rss.js",
+    "test:push": "node scripts/test-push-notification.js",
     "rss-stats": "node scripts/rss-stats.js",
     "crawl-rss": "node scripts/rss-crawler.js"
   },
   "dependencies": {
+    "firebase-admin": "^12.0.0",
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-accordion": "1.2.2",
     "@radix-ui/react-alert-dialog": "1.1.4",
@@ -54,7 +56,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
-    "date-fns": "4.1.0",
+    "date-fns": "^3.6.0",
     "dotenv": "^16.5.0",
     "embla-carousel-react": "8.5.1",
     "input-otp": "1.4.1",
