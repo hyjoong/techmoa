@@ -2,6 +2,10 @@ import dotenv from "dotenv";
 dotenv.config();
 import { createClient } from "@supabase/supabase-js";
 import Parser from "rss-parser";
+import {
+  processNewArticleNotification,
+  sendBatchNotifications,
+} from "./push-notification.js";
 
 /**
  * RSS 피드 크롤러 (중복 방지 개선 버전)
@@ -715,10 +719,18 @@ async function insertArticles(articles, existingData, feedName) {
       `✅ [${feedName}] ${newArticles.length}개 새 글 저장 (${duplicateCount}개 중복 제거)`
     );
 
+    // 🔔 푸시 알림: 각 새 글에 대해 알림 처리
+    if (data && data.length > 0) {
+      for (const article of data) {
+        await processNewArticleNotification(article);
+      }
+    }
+
     return {
       inserted: newArticles.length,
       duplicates: duplicateCount,
       duplicateReasons: duplicateReasons.slice(0, 3), // 첫 3개만 로그
+      newArticles: data || [], // 알림을 위해 새 글 반환
     };
   } catch (error) {
     console.error(`❌ [${feedName}] 데이터 삽입 중 오류:`, error.message);
@@ -739,6 +751,7 @@ async function main() {
     let totalNewArticles = 0;
     let totalProcessed = 0;
     let totalDuplicates = 0;
+    const allNewArticles = []; // 🔔 모든 새 글을 모아서 일일 요약 알림에 사용
 
     // 각 RSS 피드 처리
     for (const feedConfig of RSS_FEEDS) {
@@ -752,6 +765,11 @@ async function main() {
       totalNewArticles += result.inserted;
       totalDuplicates += result.duplicates;
       totalProcessed += articles.length;
+
+      // 🔔 새 글 수집 (일일 요약용)
+      if (result.newArticles && result.newArticles.length > 0) {
+        allNewArticles.push(...result.newArticles);
+      }
 
       // 중복 상세 로그 (처음 몇 개만)
       if (result.duplicateReasons.length > 0) {
@@ -774,6 +792,12 @@ async function main() {
         1
       )}%`
     );
+
+    // 🔔 일일 요약 알림 전송
+    if (allNewArticles.length > 0) {
+      console.log("\n📱 푸시 알림 처리 중...");
+      await sendBatchNotifications(allNewArticles);
+    }
   } catch (error) {
     console.error("❌ 크롤링 중 치명적 오류:", error.message);
     process.exit(1);
