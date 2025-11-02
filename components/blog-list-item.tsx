@@ -7,6 +7,7 @@ import Image from "next/image";
 import { incrementViews, type Blog } from "@/lib/supabase";
 import { getLogoUrl } from "@/lib/logos";
 import { useState } from "react";
+import { isFlutterWebView } from "@/lib/webview-bridge";
 
 interface BlogListItemProps {
   blog: Blog;
@@ -134,13 +135,17 @@ export function BlogListItem({
                     {/* 날짜 */}
                     <div className="flex items-center gap-1 text-sm text-muted-foreground flex-shrink-0">
                       <Calendar className="h-4 w-4 flex-shrink-0" />
-                      <span className="whitespace-nowrap">{formatDate(blog.published_at)}</span>
+                      <span className="whitespace-nowrap">
+                        {formatDate(blog.published_at)}
+                      </span>
                     </div>
 
                     {/* 조회수 */}
                     <div className="flex items-center gap-1 text-sm text-muted-foreground flex-shrink-0">
                       <Eye className="h-4 w-4 flex-shrink-0" />
-                      <span className="whitespace-nowrap">{formatViews(blog.views)}</span>
+                      <span className="whitespace-nowrap">
+                        {formatViews(blog.views)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -151,10 +156,16 @@ export function BlogListItem({
       </a>
 
       {/* 북마크 버튼 */}
-      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-        <BookmarkButton 
-          blogId={blog.id} 
-          onLoginClick={onLoginClick} 
+      <div
+        className={`absolute top-3 right-3 transition-opacity duration-200 ${
+          isFlutterWebView()
+            ? "opacity-100"
+            : "opacity-0 group-hover:opacity-100"
+        }`}
+      >
+        <BookmarkButton
+          blogId={blog.id}
+          onLoginClick={onLoginClick}
           onBookmarkRemoved={onBookmarkRemoved}
         />
       </div>

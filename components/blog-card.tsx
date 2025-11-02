@@ -8,6 +8,7 @@ import Image from "next/image";
 import { incrementViews, type Blog } from "@/lib/supabase";
 import { getLogoUrl } from "@/lib/logos";
 import { useState } from "react";
+import { isFlutterWebView } from "@/lib/webview-bridge";
 
 interface BlogCardProps {
   blog: Blog;
@@ -152,7 +153,13 @@ export function BlogCard({
       </a>
 
       {/* 북마크 버튼 */}
-      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+      <div
+        className={`absolute top-3 right-3 transition-opacity duration-200 ${
+          isFlutterWebView()
+            ? "opacity-100"
+            : "opacity-0 group-hover:opacity-100"
+        }`}
+      >
         <BookmarkButton
           blogId={blog.id}
           onLoginClick={onLoginClick}
