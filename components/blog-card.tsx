@@ -25,20 +25,13 @@ export function BlogCard({
   const [imageLoaded, setImageLoaded] = useState(false);
 
   const handleLinkClick = async (e: React.MouseEvent) => {
-    e.preventDefault();
-
+    // 조회수 증가 (백그라운드에서 실행)
     try {
-      // 조회수 증가 (최대 1초 대기)
-      await Promise.race([
-        incrementViews(blog.id),
-        new Promise((resolve) => setTimeout(resolve, 1000)),
-      ]);
+      incrementViews(blog.id);
     } catch (error) {
       console.error("조회수 증가 실패:", error);
-    } finally {
-      // 성공/실패와 관계없이 항상 링크 열기
-      window.open(blog.external_url, "_blank", "noopener,noreferrer");
     }
+    // 링크의 기본 동작을 허용 (새 탭에서 열기)
   };
 
   const formatDate = (dateString: string) => {
