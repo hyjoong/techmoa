@@ -130,6 +130,11 @@ const RSS_FEEDS = [
     url: "https://teamdable.github.io/techblog/feed.xml",
     type: "company",
   },
+  {
+    name: "사람인",
+    url: "https://saramin.github.io/feed.xml",
+    type: "company",
+  },
   { name: "직방", url: "https://medium.com/feed/zigbang", type: "company" },
   {
     name: "콴다",
