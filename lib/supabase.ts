@@ -92,6 +92,7 @@ export async function fetchAvailableBlogs() {
       "에잇퍼센트",
       "요기요",
       "원티드",
+      "사람인",
       "데이블",
       "직방",
       "다나와",
