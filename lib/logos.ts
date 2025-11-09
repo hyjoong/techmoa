@@ -27,6 +27,7 @@ export const logoMap: Record<string, string> = {
   레브잇: "/logos/levit.ico",
   여기어때: "/logos/gccompany.ico",
   AB180: "/logos/ab180.ico",
+  사람인: "/logos/saramin.ico",
 };
 
 // 로고 URL을 가져오는 헬퍼 함수
