@@ -66,6 +66,15 @@ export default function HomePage() {
     router.push("/");
   };
 
+  // 블로그 타입 변경 (다른 타입으로 변경될 때만 스크롤)
+  const handleBlogTypeChangeWithScroll = (type: typeof blogType) => {
+    const shouldScroll = type !== blogType;  // 타입이 변경되는 경우에만 스크롤
+    handleBlogTypeChange(type);
+    if (shouldScroll) {
+      scrollToTop();
+    }
+  };
+
   // 필터 초기화 (스크롤 추가)
   const handleClearFilters = () => {
     clearFilters();
@@ -78,7 +87,7 @@ export default function HomePage() {
         blogType={blogType}
         selectedBlog={selectedBlog}
         hasActiveFilters={hasActiveFilters}
-        onBlogTypeChange={handleBlogTypeChange}
+        onBlogTypeChange={handleBlogTypeChangeWithScroll}
         onBlogChange={handleBlogChange}
         onClearFilters={handleClearFilters}
         onLogoClick={handleLogoClick}
