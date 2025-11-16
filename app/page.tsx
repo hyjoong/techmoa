@@ -75,6 +75,15 @@ export default function HomePage() {
     }
   };
 
+  // 블로그 필터 변경 (다른 블로그로 변경될 때만 스크롤)
+  const handleBlogChangeWithScroll = (blog: string) => {
+    const shouldScroll = blog !== selectedBlog;  // 블로그가 변경되는 경우에만 스크롤
+    handleBlogChange(blog);
+    if (shouldScroll) {
+      scrollToTop();
+    }
+  };
+
   // 필터 초기화 (스크롤 추가)
   const handleClearFilters = () => {
     clearFilters();
@@ -88,7 +97,7 @@ export default function HomePage() {
         selectedBlog={selectedBlog}
         hasActiveFilters={hasActiveFilters}
         onBlogTypeChange={handleBlogTypeChangeWithScroll}
-        onBlogChange={handleBlogChange}
+        onBlogChange={handleBlogChangeWithScroll}
         onClearFilters={handleClearFilters}
         onLogoClick={handleLogoClick}
         onLoginClick={() => setAuthModalOpen(true)}
