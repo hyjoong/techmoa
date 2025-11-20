@@ -3,13 +3,14 @@
 국내 주요 기업과 개발자들의 기술 블로그를 한곳에서 모아보는 아그리게이터 서비스입니다.
 
 [![App Store](https://img.shields.io/badge/Download_on-the_App_Store-blue?logo=apple&logoColor=white&style=for-the-badge)](https://apps.apple.com/us/app/techmoa/id6754512319)
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://techmoa.dev)
+[![Google Play](https://img.shields.io/badge/Google_Play-414141?style=for-the-badge&logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=com.techmoa.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](http://makeapullrequest.com)
 
 ## 🌐 바로 사용해보기
 
 - 🔗 [웹에서 보기](https://techmoa.dev)
+- 📲 [Google Play에서 설치하기](https://play.google.com/store/apps/details?id=com.techmoa.app)
 - 🍎 [App Store에서 설치하기](https://apps.apple.com/us/app/techmoa/id6754512319)
 
 ## 🚀 주요 기능
