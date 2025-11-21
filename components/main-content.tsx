@@ -14,12 +14,10 @@ interface MainContentProps {
   totalCount: number;
   viewMode: "gallery" | "list";
   searchQuery: string;
-  hasActiveFilters: boolean;
   isWeeklyExpanded: boolean;
   onLoadMore?: () => void;
   onViewModeChange: (mode: "gallery" | "list") => void;
   onSearchChange: (query: string) => void;
-  onClearFilters: () => void;
   onWeeklyToggle: () => void;
   onLoginClick: () => void;
 }
@@ -32,12 +30,10 @@ export function MainContent({
   totalCount,
   viewMode,
   searchQuery,
-  hasActiveFilters,
   isWeeklyExpanded,
   onLoadMore,
   onViewModeChange,
   onSearchChange,
-  onClearFilters,
   onWeeklyToggle,
   onLoginClick,
 }: MainContentProps) {
@@ -94,20 +90,9 @@ export function MainContent({
           <h3 className="text-2xl font-bold mb-3 text-slate-900 dark:text-slate-100">
             검색 결과가 없습니다
           </h3>
-          <p className="text-slate-600 dark:text-slate-400 mb-6 text-lg">
-            {hasActiveFilters
-              ? "다른 키워드로 검색해보세요."
-              : "블로그 글이 없습니다."}
+          <p className="text-slate-600 dark:text-slate-400 text-lg">
+            다른 키워드로 검색해보세요.
           </p>
-          {hasActiveFilters && (
-            <Button
-              onClick={onClearFilters}
-              variant="outline"
-              className="rounded-full px-8 py-3 text-lg"
-            >
-              검색 초기화
-            </Button>
-          )}
         </div>
       ) : (
         <>

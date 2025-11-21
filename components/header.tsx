@@ -2,8 +2,6 @@
 
 import { BlogTypeToggle } from "@/components/blog-type-toggle";
 import { BlogSelector } from "@/components/blog-selector";
-import { Button } from "@/components/ui/button";
-import { RotateCcw } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserMenu } from "@/components/auth/user-menu";
 import { isFlutterWebView } from "@/lib/webview-bridge";
@@ -12,10 +10,8 @@ import type { BlogType } from "@/hooks/use-url-filters";
 interface HeaderProps {
   blogType: BlogType;
   selectedBlog: string;
-  hasActiveFilters: boolean;
   onBlogTypeChange: (type: BlogType) => void;
   onBlogChange: (blog: string) => void;
-  onClearFilters: () => void;
   onLogoClick: () => void;
   onLoginClick: () => void;
 }
@@ -23,10 +19,8 @@ interface HeaderProps {
 export function Header({
   blogType,
   selectedBlog,
-  hasActiveFilters,
   onBlogTypeChange,
   onBlogChange,
-  onClearFilters,
   onLogoClick,
   onLoginClick,
 }: HeaderProps) {
@@ -47,17 +41,6 @@ export function Header({
 
           {/* 필터들 */}
           <div className="flex items-center gap-3">
-            {hasActiveFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClearFilters}
-                className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"
-              >
-                <RotateCcw className="h-4 w-4 mr-1" />
-                <span>초기화</span>
-              </Button>
-            )}
             <BlogTypeToggle
               blogType={blogType}
               onBlogTypeChange={onBlogTypeChange}
@@ -92,17 +75,6 @@ export function Header({
 
           {/* 두 번째 줄: 필터들 */}
           <div className="flex items-center justify-between gap-2">
-            {hasActiveFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClearFilters}
-                className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"
-              >
-                <RotateCcw className="h-4 w-4" />
-                <span className="sr-only">초기화</span>
-              </Button>
-            )}
             <BlogTypeToggle
               blogType={blogType}
               onBlogTypeChange={onBlogTypeChange}

@@ -34,8 +34,6 @@ export default function HomePage() {
     handlePageChange,
     handleViewModeChange,
     handleSearchChange,
-    clearFilters,
-    hasActiveFilters,
   } = useUrlFilters();
 
   // 블로그 데이터 관리 (무한 스크롤)
@@ -84,21 +82,13 @@ export default function HomePage() {
     }
   };
 
-  // 필터 초기화 (스크롤 추가)
-  const handleClearFilters = () => {
-    clearFilters();
-    scrollToTop();
-  };
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Header
         blogType={blogType}
         selectedBlog={selectedBlog}
-        hasActiveFilters={hasActiveFilters}
         onBlogTypeChange={handleBlogTypeChangeWithScroll}
         onBlogChange={handleBlogChangeWithScroll}
-        onClearFilters={handleClearFilters}
         onLogoClick={handleLogoClick}
         onLoginClick={() => setAuthModalOpen(true)}
       />
@@ -112,11 +102,9 @@ export default function HomePage() {
           totalCount={totalCount}
           viewMode={viewMode}
           searchQuery={searchQuery}
-          hasActiveFilters={hasActiveFilters}
           onLoadMore={loadMore}
           onViewModeChange={handleViewModeChange}
           onSearchChange={handleSearchChange}
-          onClearFilters={handleClearFilters}
           isWeeklyExpanded={isWeeklyExpanded}
           onWeeklyToggle={() => setIsWeeklyExpanded(!isWeeklyExpanded)}
           onLoginClick={() => setAuthModalOpen(true)}
