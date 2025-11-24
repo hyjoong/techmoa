@@ -1,5 +1,7 @@
 # Techmoa - 기술 블로그 모음집
 
+<img width="600" alt="Techmoa Feature Graphic" src="https://res.cloudinary.com/de1b512h7/image/upload/v1764005023/graph_kxtjr5.png" />
+
 국내 주요 기업과 개발자들의 기술 블로그를 한곳에서 모아보는 아그리게이터 서비스입니다.
 
 [![App Store](https://img.shields.io/badge/Download_on-the_App_Store-blue?logo=apple&logoColor=white&style=for-the-badge)](https://apps.apple.com/us/app/techmoa/id6754512319)
