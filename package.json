@@ -14,7 +14,8 @@
     "test:rss": "node scripts/validate-rss.js",
     "test:push": "node scripts/test-push-notification.js",
     "rss-stats": "node scripts/rss-stats.js",
-    "crawl-rss": "node scripts/rss-crawler.js"
+    "crawl-rss": "node scripts/rss-crawler.js",
+    "backfill-tags": "node scripts/backfill-tags.js"
   },
   "dependencies": {
     "firebase-admin": "^12.0.0",
