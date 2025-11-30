@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Blog, fetchBlogs } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import type { BlogType, SortBy } from "./use-url-filters";
+import { getTagsForCategory, type TagCategory } from "@/lib/tag-filters";
 
 const ITEMS_PER_PAGE = 12;
 
@@ -21,6 +22,7 @@ export interface InfiniteBlogDataFilters {
   selectedBlog: string;
   sortBy: SortBy;
   searchQuery: string;
+  tagCategory: TagCategory;
 }
 
 export function useInfiniteBlogData(
@@ -48,6 +50,7 @@ export function useInfiniteBlogData(
         author:
           filters.selectedBlog === "all" ? undefined : filters.selectedBlog,
         search: filters.searchQuery || undefined,
+        tags: getTagsForCategory(filters.tagCategory),
       });
 
       setBlogs(result.blogs);
@@ -81,6 +84,7 @@ export function useInfiniteBlogData(
         author:
           filters.selectedBlog === "all" ? undefined : filters.selectedBlog,
         search: filters.searchQuery || undefined,
+        tags: getTagsForCategory(filters.tagCategory),
       });
 
       setBlogs((prev) => [...prev, ...result.blogs]);
@@ -106,6 +110,7 @@ export function useInfiniteBlogData(
     filters.blogType,
     filters.selectedBlog,
     filters.searchQuery,
+    filters.tagCategory,
   ]);
 
   return {

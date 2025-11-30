@@ -10,6 +10,7 @@ export interface Blog {
   title: string;
   summary: string | null;
   author: string;
+  tags?: string[];
   published_at: string;
   thumbnail_url: string | null;
   external_url: string;
@@ -135,6 +136,8 @@ export async function fetchBlogs({
   sortBy = "published_at",
   blogType = "company",
   author,
+  tags,
+  tagMode = "or",
 }: {
   page?: number;
   limit?: number;
@@ -142,6 +145,8 @@ export async function fetchBlogs({
   sortBy?: "published_at" | "title" | "views";
   blogType?: "company" | "personal";
   author?: string;
+  tags?: string[];
+  tagMode?: "and" | "or";
 } = {}) {
   let query = supabase.from("blogs").select("*", { count: "exact" });
 
@@ -159,6 +164,15 @@ export async function fetchBlogs({
     query = query.or(
       `title.ilike.%${searchTerm}%,author.ilike.%${searchTerm}%`
     );
+  }
+
+  // 태그 필터
+  if (tags && tags.length > 0) {
+    if (tagMode === "and") {
+      query = query.contains("tags", tags);
+    } else {
+      query = query.overlaps("tags", tags);
+    }
   }
 
   // 정렬

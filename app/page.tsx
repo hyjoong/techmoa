@@ -25,15 +25,16 @@ export default function HomePage() {
   const {
     blogType,
     selectedBlog,
-    currentPage,
     sortBy,
     viewMode,
     searchQuery,
+    tagCategory,
     handleBlogTypeChange,
     handleBlogChange,
     handlePageChange,
     handleViewModeChange,
     handleSearchChange,
+    handleTagCategoryChange,
   } = useUrlFilters();
 
   // 블로그 데이터 관리 (무한 스크롤)
@@ -43,6 +44,7 @@ export default function HomePage() {
       selectedBlog,
       sortBy,
       searchQuery,
+      tagCategory,
     });
 
   // 주간 인기글 로드
@@ -66,7 +68,7 @@ export default function HomePage() {
 
   // 블로그 타입 변경 (다른 타입으로 변경될 때만 스크롤)
   const handleBlogTypeChangeWithScroll = (type: typeof blogType) => {
-    const shouldScroll = type !== blogType;  // 타입이 변경되는 경우에만 스크롤
+    const shouldScroll = type !== blogType; // 타입이 변경되는 경우에만 스크롤
     handleBlogTypeChange(type);
     if (shouldScroll) {
       scrollToTop();
@@ -75,8 +77,16 @@ export default function HomePage() {
 
   // 블로그 필터 변경 (다른 블로그로 변경될 때만 스크롤)
   const handleBlogChangeWithScroll = (blog: string) => {
-    const shouldScroll = blog !== selectedBlog;  // 블로그가 변경되는 경우에만 스크롤
+    const shouldScroll = blog !== selectedBlog; // 블로그가 변경되는 경우에만 스크롤
     handleBlogChange(blog);
+    if (shouldScroll) {
+      scrollToTop();
+    }
+  };
+
+  const handleTagCategoryChangeWithScroll = (category: typeof tagCategory) => {
+    const shouldScroll = category !== tagCategory;
+    handleTagCategoryChange(category);
     if (shouldScroll) {
       scrollToTop();
     }
@@ -102,9 +112,11 @@ export default function HomePage() {
           totalCount={totalCount}
           viewMode={viewMode}
           searchQuery={searchQuery}
+          tagCategory={tagCategory}
           onLoadMore={loadMore}
           onViewModeChange={handleViewModeChange}
           onSearchChange={handleSearchChange}
+          onTagCategoryChange={handleTagCategoryChangeWithScroll}
           isWeeklyExpanded={isWeeklyExpanded}
           onWeeklyToggle={() => setIsWeeklyExpanded(!isWeeklyExpanded)}
           onLoginClick={() => setAuthModalOpen(true)}

@@ -5,6 +5,7 @@ import { Blog, fetchBlogs } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { useScrollToTop } from "@/hooks/use-scroll-to-top";
 import type { BlogType, SortBy } from "./use-url-filters";
+import { getTagsForCategory, type TagCategory } from "@/lib/tag-filters";
 
 const ITEMS_PER_PAGE = 12;
 
@@ -20,6 +21,7 @@ export interface BlogDataFilters {
   selectedBlog: string;
   currentPage: number;
   sortBy: SortBy;
+  tagCategory: TagCategory;
 }
 
 export function useBlogData(filters: BlogDataFilters): BlogDataState {
@@ -42,6 +44,7 @@ export function useBlogData(filters: BlogDataFilters): BlogDataState {
         blogType: filters.blogType,
         author:
           filters.selectedBlog === "all" ? undefined : filters.selectedBlog,
+        tags: getTagsForCategory(filters.tagCategory),
       });
 
       setBlogs(result.blogs);
@@ -75,6 +78,7 @@ export function useBlogData(filters: BlogDataFilters): BlogDataState {
     filters.blogType,
     filters.selectedBlog,
     filters.currentPage,
+    filters.tagCategory,
     scrollToTop,
   ]);
 
