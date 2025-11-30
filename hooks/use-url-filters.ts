@@ -1,6 +1,8 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import type { TagCategory } from "@/lib/tag-filters";
+export type { TagCategory } from "@/lib/tag-filters";
 
 export type BlogType = "company" | "personal";
 export type SortBy = "published_at" | "title" | "views";
@@ -13,6 +15,7 @@ export interface UrlFilters {
   sortBy: SortBy;
   viewMode: ViewMode;
   searchQuery: string;
+  tagCategory: TagCategory;
 }
 
 export interface UrlFiltersActions {
@@ -24,6 +27,7 @@ export interface UrlFiltersActions {
   handleSearchChange: (query: string) => void;
   clearFilters: () => void;
   hasActiveFilters: boolean;
+  handleTagCategoryChange: (category: TagCategory) => void;
 }
 
 export function useUrlFilters(): UrlFilters & UrlFiltersActions {
@@ -37,6 +41,8 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
   const sortBy = (searchParams.get("sort") as SortBy) || "published_at";
   const viewMode = (searchParams.get("view") as ViewMode) || "gallery";
   const searchQuery = searchParams.get("q") || "";
+  const tagCategory =
+    (searchParams.get("tag") as TagCategory) || ("all" as TagCategory);
 
   // URL 업데이트 함수
   const updateURL = (updates: Record<string, string | number | null>) => {
@@ -51,7 +57,8 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
         (key === "page" && value === 1) ||
         (key === "sort" && value === "published_at") ||
         (key === "view" && value === "gallery") ||
-        (key === "q" && value === "")
+        (key === "q" && value === "") ||
+        (key === "tag" && value === "all")
       ) {
         params.delete(key);
       } else {
@@ -94,14 +101,21 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
     updateURL({ q: query, page: 1 });
   };
 
+  const handleTagCategoryChange = (category: TagCategory) => {
+    updateURL({ tag: category, page: 1 });
+  };
+
   // 필터 초기화
   const clearFilters = () => {
-    updateURL({ type: "company", blog: "all", page: 1, q: "" });
+    updateURL({ type: "company", blog: "all", page: 1, q: "", tag: "all" });
   };
 
   // 활성 필터 확인
   const hasActiveFilters =
-    blogType !== "company" || selectedBlog !== "all" || searchQuery !== "";
+    blogType !== "company" ||
+    selectedBlog !== "all" ||
+    searchQuery !== "" ||
+    tagCategory !== "all";
 
   return {
     // 상태
@@ -111,6 +125,7 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
     sortBy,
     viewMode,
     searchQuery,
+    tagCategory,
     // 액션
     updateURL,
     handleBlogTypeChange,
@@ -120,5 +135,6 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
     handleSearchChange,
     clearFilters,
     hasActiveFilters,
+    handleTagCategoryChange,
   };
 }

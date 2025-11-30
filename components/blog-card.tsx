@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { BookmarkButton } from "@/components/bookmark-button";
+import { Badge } from "@/components/ui/badge";
 
 import { Building2, Calendar, Eye, User } from "lucide-react";
 import Image from "next/image";
@@ -135,6 +136,20 @@ export function BlogCard({
             <p className="text-muted-foreground text-sm mb-4 line-clamp-3 flex-1 leading-relaxed">
               {blog.summary || "요약이 없습니다."}
             </p>
+
+            {blog.tags && blog.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                {blog.tags.slice(0, 6).map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="outline"
+                    className="rounded-full border-slate-300 dark:border-white/25 text-foreground"
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            )}
 
             <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t border-border/30 dark:border-border/50">
               <div className="flex items-center gap-4">

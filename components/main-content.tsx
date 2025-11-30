@@ -3,6 +3,7 @@ import { BlogListItem } from "@/components/blog-list-item";
 import { InfiniteScrollTrigger } from "@/components/infinite-scroll-trigger";
 import { ViewToggle } from "@/components/view-toggle";
 import { Button } from "@/components/ui/button";
+import { TagFilterBar } from "@/components/tag-filter-bar";
 import type { Blog } from "@/lib/supabase";
 import { ChevronLeft } from "lucide-react";
 
@@ -14,10 +15,12 @@ interface MainContentProps {
   totalCount: number;
   viewMode: "gallery" | "list";
   searchQuery: string;
+  tagCategory: import("@/lib/tag-filters").TagCategory;
   isWeeklyExpanded: boolean;
   onLoadMore?: () => void;
   onViewModeChange: (mode: "gallery" | "list") => void;
   onSearchChange: (query: string) => void;
+  onTagCategoryChange: (category: import("@/lib/tag-filters").TagCategory) => void;
   onWeeklyToggle: () => void;
   onLoginClick: () => void;
 }
@@ -30,37 +33,43 @@ export function MainContent({
   totalCount,
   viewMode,
   searchQuery,
+  tagCategory,
   isWeeklyExpanded,
   onLoadMore,
   onViewModeChange,
   onSearchChange,
+  onTagCategoryChange,
   onWeeklyToggle,
   onLoginClick,
 }: MainContentProps) {
   return (
     <main className="flex-1 pt-4">
+      <div className="mb-4 flex items-center gap-4">
+        <ViewToggle
+          viewMode={viewMode}
+          onViewModeChange={onViewModeChange}
+          searchQuery={searchQuery}
+          onSearchChange={onSearchChange}
+        />
+        {!isWeeklyExpanded && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onWeeklyToggle}
+            className="hidden xl:flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            주간 인기글 보기
+          </Button>
+        )}
+      </div>
+
+      <div className="mb-6 w-full overflow-hidden">
+        <TagFilterBar value={tagCategory} onChange={onTagCategoryChange} />
+      </div>
+
       {loading ? (
         <>
-          {/* 뷰 토글 */}
-          <div className="mb-4 flex items-center gap-4">
-            <ViewToggle
-              viewMode={viewMode}
-              onViewModeChange={onViewModeChange}
-              searchQuery={searchQuery}
-              onSearchChange={onSearchChange}
-            />
-            {!isWeeklyExpanded && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onWeeklyToggle}
-                className="hidden xl:flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                주간 인기글 보기
-              </Button>
-            )}
-          </div>
           {/* 로딩 스켈레톤 */}
           {viewMode === "gallery" ? (
             <div
@@ -96,26 +105,6 @@ export function MainContent({
         </div>
       ) : (
         <>
-          {/* 뷰 토글 */}
-          <div className="mb-4 flex items-center gap-4">
-            <ViewToggle
-              viewMode={viewMode}
-              onViewModeChange={onViewModeChange}
-              searchQuery={searchQuery}
-              onSearchChange={onSearchChange}
-            />
-            {!isWeeklyExpanded && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onWeeklyToggle}
-                className="hidden xl:flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                주간 인기글 보기
-              </Button>
-            )}
-          </div>
           {/* 검색 결과 개수 표시 */}
           {searchQuery && (
             <div className="mb-4 text-sm text-slate-600 dark:text-slate-400">
