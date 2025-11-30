@@ -6,6 +6,7 @@ import {
   processNewArticleNotification,
   sendBatchNotifications,
 } from "./push-notification.js";
+import { generateTagsForArticle, baseTagsFromFeedCategory } from "./ai-tags.js";
 
 /**
  * RSS 피드 크롤러 (중복 방지 개선 버전)
@@ -246,6 +247,19 @@ const parser = new Parser({
     Accept: "application/xml,application/atom+xml,text/xml",
   },
 });
+const TAG_REQUEST_DELAY_MS = parseInt(
+  process.env.TAG_REQUEST_DELAY_MS || "8000",
+  10
+);
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const mergeTags = (tagsA = [], tagsB = []) => {
+  const normalized = [...tagsA, ...tagsB]
+    .filter(Boolean)
+    .map((tag) => tag.toString().toLowerCase().trim())
+    .filter((tag) => tag.length > 0);
+  return Array.from(new Set(normalized)).slice(0, 8);
+};
 
 // 텍스트에서 HTML 태그 제거
 function stripHtml(html) {
@@ -631,6 +645,7 @@ async function parseFeed(feedConfig) {
         thumbnail_url: await extractThumbnail(item, feedConfig),
         blog_type: feedConfig.type,
         category: feedConfig.category || null,
+        tags: baseTagsFromFeedCategory(feedConfig.category),
       };
 
       articles.push(article);
@@ -691,7 +706,17 @@ async function insertArticles(articles, existingData, feedName) {
         url: duplicateCheck.url || duplicateCheck.existingUrl,
       });
     } else {
-      newArticles.push(article);
+      // 태그가 비어있을 때만 AI 태깅 실행 (기본 카테고리 태그가 있으면 건너뜀)
+      let mergedTags = article.tags || [];
+      if (!mergedTags || mergedTags.length === 0) {
+        const aiTags = await generateTagsForArticle(article);
+        mergedTags = mergeTags(article.tags, aiTags);
+        if (TAG_REQUEST_DELAY_MS > 0) {
+          await sleep(TAG_REQUEST_DELAY_MS);
+        }
+      }
+
+      newArticles.push({ ...article, tags: mergedTags });
 
       // 메모리상 existingData 업데이트 (같은 크롤링 세션 내 중복 방지)
       existingData.urlSet.add(article.external_url);
