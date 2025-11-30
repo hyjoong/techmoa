@@ -142,8 +142,6 @@ async function generateWithFireworks(prompt) {
 
     throw new Error(`Fireworks 요청 실패 (status=${response.status}): ${body}`);
   }
-
-  throw new Error("Fireworks 요청이 반복 실패했습니다.");
 }
 
 export async function generateTagsForArticle(article) {
