@@ -4,6 +4,7 @@ import { InfiniteScrollTrigger } from "@/components/infinite-scroll-trigger";
 import { ViewToggle } from "@/components/view-toggle";
 import { Button } from "@/components/ui/button";
 import { TagFilterBar } from "@/components/tag-filter-bar";
+import type { TagCategory } from "@/lib/tag-filters";
 import type { Blog } from "@/lib/supabase";
 import { ChevronLeft } from "lucide-react";
 
@@ -15,12 +16,12 @@ interface MainContentProps {
   totalCount: number;
   viewMode: "gallery" | "list";
   searchQuery: string;
-  tagCategory: import("@/lib/tag-filters").TagCategory;
+  tagCategory: TagCategory;
   isWeeklyExpanded: boolean;
   onLoadMore?: () => void;
   onViewModeChange: (mode: "gallery" | "list") => void;
   onSearchChange: (query: string) => void;
-  onTagCategoryChange: (category: import("@/lib/tag-filters").TagCategory) => void;
+  onTagCategoryChange: (category: TagCategory) => void;
   onWeeklyToggle: () => void;
   onLoginClick: () => void;
 }
