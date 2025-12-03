@@ -84,6 +84,8 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
       page: 1,
       view: viewMode,
       q: searchQuery,
+      tag: "all", // 태그 필터 초기화
+      subtags: "", // 서브태그 필터 초기화
     });
   };
 
