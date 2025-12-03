@@ -61,7 +61,7 @@ export function TagFilterBar({
                 key={subTag}
                 variant={isSelected ? "default" : "outline"}
                 size="sm"
-                className={`rounded-full px-3 text-xs whitespace-nowrap border-slate-300 dark:border-white/25 ${
+                className={`rounded-full px-3 py-0 h-7 text-xs whitespace-nowrap border-slate-300 dark:border-white/25 ${
                   isSelected
                     ? "opacity-100"
                     : "opacity-60 hover:opacity-100"
