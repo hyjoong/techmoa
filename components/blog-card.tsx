@@ -15,12 +15,14 @@ interface BlogCardProps {
   blog: Blog;
   onLoginClick: () => void;
   onBookmarkRemoved?: () => void;
+  selectedSubTags?: string[];
 }
 
 export function BlogCard({
   blog,
   onLoginClick,
   onBookmarkRemoved,
+  selectedSubTags = [],
 }: BlogCardProps) {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -139,15 +141,23 @@ export function BlogCard({
 
             {blog.tags && blog.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mb-4">
-                {blog.tags.slice(0, 6).map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant="outline"
-                    className="rounded-full border-slate-300 dark:border-white/25 text-foreground"
-                  >
-                    {tag}
-                  </Badge>
-                ))}
+                {blog.tags.slice(0, 6).map((tag) => {
+                  const isHighlighted =
+                    selectedSubTags.length > 0 && selectedSubTags.includes(tag);
+                  return (
+                    <Badge
+                      key={tag}
+                      variant={isHighlighted ? "default" : "outline"}
+                      className={`rounded-full ${
+                        isHighlighted
+                          ? ""
+                          : "border-slate-300 dark:border-white/25 text-foreground"
+                      }`}
+                    >
+                      {tag}
+                    </Badge>
+                  );
+                })}
               </div>
             )}
 
