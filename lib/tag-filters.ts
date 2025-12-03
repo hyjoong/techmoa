@@ -86,7 +86,23 @@ export const TAG_FILTER_OPTIONS: TagFilterOption[] = [
   },
 ];
 
-export const getTagsForCategory = (category: TagCategory) => {
+export const getTagsForCategory = (
+  category: TagCategory,
+  selectedSubTags?: string[]
+): string[] | undefined => {
+  // "all" 카테고리면 undefined 반환 (필터링 안함)
+  if (category === "all") {
+    return undefined;
+  }
+
   const option = TAG_FILTER_OPTIONS.find((opt) => opt.id === category);
-  return option?.tags ?? [];
+  const allTags = option?.tags ?? [];
+
+  // 서브태그가 선택되었으면 해당 태그만 반환
+  if (selectedSubTags && selectedSubTags.length > 0) {
+    return selectedSubTags;
+  }
+
+  // 선택 안되었으면 전체 태그 반환 (빈 배열이면 undefined)
+  return allTags.length > 0 ? allTags : undefined;
 };

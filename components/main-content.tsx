@@ -17,11 +17,13 @@ interface MainContentProps {
   viewMode: "gallery" | "list";
   searchQuery: string;
   tagCategory: TagCategory;
+  selectedSubTags: string[];
   isWeeklyExpanded: boolean;
   onLoadMore?: () => void;
   onViewModeChange: (mode: "gallery" | "list") => void;
   onSearchChange: (query: string) => void;
   onTagCategoryChange: (category: TagCategory) => void;
+  onSubTagChange: (subTags: string[]) => void;
   onWeeklyToggle: () => void;
   onLoginClick: () => void;
 }
@@ -35,11 +37,13 @@ export function MainContent({
   viewMode,
   searchQuery,
   tagCategory,
+  selectedSubTags,
   isWeeklyExpanded,
   onLoadMore,
   onViewModeChange,
   onSearchChange,
   onTagCategoryChange,
+  onSubTagChange,
   onWeeklyToggle,
   onLoginClick,
 }: MainContentProps) {
@@ -66,7 +70,12 @@ export function MainContent({
       </div>
 
       <div className="mb-6 w-full overflow-hidden">
-        <TagFilterBar value={tagCategory} onChange={onTagCategoryChange} />
+        <TagFilterBar
+          value={tagCategory}
+          selectedSubTags={selectedSubTags}
+          onChange={onTagCategoryChange}
+          onSubTagChange={onSubTagChange}
+        />
       </div>
 
       {loading ? (
@@ -131,6 +140,7 @@ export function MainContent({
                   key={blog.id}
                   blog={blog}
                   onLoginClick={onLoginClick}
+                  selectedSubTags={selectedSubTags}
                 />
               ))}
             </div>

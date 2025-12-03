@@ -16,6 +16,7 @@ export interface UrlFilters {
   viewMode: ViewMode;
   searchQuery: string;
   tagCategory: TagCategory;
+  selectedSubTags: string[];
 }
 
 export interface UrlFiltersActions {
@@ -28,6 +29,7 @@ export interface UrlFiltersActions {
   clearFilters: () => void;
   hasActiveFilters: boolean;
   handleTagCategoryChange: (category: TagCategory) => void;
+  handleSubTagChange: (subTags: string[]) => void;
 }
 
 export function useUrlFilters(): UrlFilters & UrlFiltersActions {
@@ -43,6 +45,9 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
   const searchQuery = searchParams.get("q") || "";
   const tagCategory =
     (searchParams.get("tag") as TagCategory) || ("all" as TagCategory);
+  const selectedSubTags = searchParams.get("subtags")
+    ? searchParams.get("subtags")!.split(",")
+    : [];
 
   // URL 업데이트 함수
   const updateURL = (updates: Record<string, string | number | null>) => {
@@ -58,7 +63,8 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
         (key === "sort" && value === "published_at") ||
         (key === "view" && value === "gallery") ||
         (key === "q" && value === "") ||
-        (key === "tag" && value === "all")
+        (key === "tag" && value === "all") ||
+        (key === "subtags" && value === "")
       ) {
         params.delete(key);
       } else {
@@ -102,12 +108,23 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
   };
 
   const handleTagCategoryChange = (category: TagCategory) => {
-    updateURL({ tag: category, page: 1 });
+    updateURL({ tag: category, page: 1, subtags: "" });
+  };
+
+  const handleSubTagChange = (subTags: string[]) => {
+    updateURL({ subtags: subTags.length > 0 ? subTags.join(",") : "", page: 1 });
   };
 
   // 필터 초기화
   const clearFilters = () => {
-    updateURL({ type: "company", blog: "all", page: 1, q: "", tag: "all" });
+    updateURL({
+      type: "company",
+      blog: "all",
+      page: 1,
+      q: "",
+      tag: "all",
+      subtags: "",
+    });
   };
 
   // 활성 필터 확인
@@ -115,7 +132,8 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
     blogType !== "company" ||
     selectedBlog !== "all" ||
     searchQuery !== "" ||
-    tagCategory !== "all";
+    tagCategory !== "all" ||
+    selectedSubTags.length > 0;
 
   return {
     // 상태
@@ -126,6 +144,7 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
     viewMode,
     searchQuery,
     tagCategory,
+    selectedSubTags,
     // 액션
     updateURL,
     handleBlogTypeChange,
@@ -136,5 +155,6 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
     clearFilters,
     hasActiveFilters,
     handleTagCategoryChange,
+    handleSubTagChange,
   };
 }

@@ -23,6 +23,7 @@ export interface InfiniteBlogDataFilters {
   sortBy: SortBy;
   searchQuery: string;
   tagCategory: TagCategory;
+  selectedSubTags: string[];
 }
 
 export function useInfiniteBlogData(
@@ -42,6 +43,8 @@ export function useInfiniteBlogData(
       setLoading(true);
       setCurrentPage(1);
 
+      const tags = getTagsForCategory(filters.tagCategory, filters.selectedSubTags);
+
       const result = await fetchBlogs({
         page: 1,
         limit: ITEMS_PER_PAGE,
@@ -50,7 +53,7 @@ export function useInfiniteBlogData(
         author:
           filters.selectedBlog === "all" ? undefined : filters.selectedBlog,
         search: filters.searchQuery || undefined,
-        tags: getTagsForCategory(filters.tagCategory),
+        tags: tags,
       });
 
       setBlogs(result.blogs);
@@ -84,7 +87,7 @@ export function useInfiniteBlogData(
         author:
           filters.selectedBlog === "all" ? undefined : filters.selectedBlog,
         search: filters.searchQuery || undefined,
-        tags: getTagsForCategory(filters.tagCategory),
+        tags: getTagsForCategory(filters.tagCategory, filters.selectedSubTags),
       });
 
       setBlogs((prev) => [...prev, ...result.blogs]);
@@ -105,12 +108,14 @@ export function useInfiniteBlogData(
   // 필터 변경 시 초기화
   useEffect(() => {
     loadInitialBlogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     filters.sortBy,
     filters.blogType,
     filters.selectedBlog,
     filters.searchQuery,
     filters.tagCategory,
+    filters.selectedSubTags.join(","), // 배열을 문자열로 변환하여 비교
   ]);
 
   return {
