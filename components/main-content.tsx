@@ -4,7 +4,10 @@ import { InfiniteScrollTrigger } from "@/components/infinite-scroll-trigger";
 import { ViewToggle } from "@/components/view-toggle";
 import { Button } from "@/components/ui/button";
 import { TagFilterBar } from "@/components/tag-filter-bar";
-import type { TagCategory } from "@/lib/tag-filters";
+import {
+  TAG_FILTER_OPTIONS,
+  type TagCategory,
+} from "@/lib/tag-filters";
 import type { Blog } from "@/lib/supabase";
 import { ChevronLeft } from "lucide-react";
 
@@ -47,6 +50,28 @@ export function MainContent({
   onWeeklyToggle,
   onLoginClick,
 }: MainContentProps) {
+  // 태그 클릭 시 필터에 추가
+  const handleTagClick = (tag: string) => {
+    // 클릭한 태그가 속한 카테고리 찾기
+    const matchedCategory = TAG_FILTER_OPTIONS.find((option) =>
+      option.tags.includes(tag)
+    );
+
+    // 이미 선택된 태그면 제거
+    if (selectedSubTags.includes(tag)) {
+      onSubTagChange(selectedSubTags.filter((t) => t !== tag));
+    } else {
+      // 태그 추가하고, 해당 카테고리로 전환
+      if (matchedCategory && tagCategory !== matchedCategory.id) {
+        onTagCategoryChange(matchedCategory.id);
+      }
+      onSubTagChange([...selectedSubTags, tag]);
+    }
+
+    // 상단으로 스크롤
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <main className="flex-1 pt-4">
       <div className="mb-4 flex items-center gap-4">
@@ -141,6 +166,7 @@ export function MainContent({
                   blog={blog}
                   onLoginClick={onLoginClick}
                   selectedSubTags={selectedSubTags}
+                  onTagClick={handleTagClick}
                 />
               ))}
             </div>

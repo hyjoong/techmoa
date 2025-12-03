@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { BookmarkButton } from "@/components/bookmark-button";
 import { Badge } from "@/components/ui/badge";
 
-import { Building2, Calendar, Eye, User } from "lucide-react";
+import { Building2, Calendar, Eye, User, Plus, Check } from "lucide-react";
 import Image from "next/image";
 import { incrementViews, type Blog } from "@/lib/supabase";
 import { getLogoUrl } from "@/lib/logos";
@@ -16,6 +16,7 @@ interface BlogCardProps {
   onLoginClick: () => void;
   onBookmarkRemoved?: () => void;
   selectedSubTags?: string[];
+  onTagClick?: (tag: string) => void;
 }
 
 export function BlogCard({
@@ -23,9 +24,11 @@ export function BlogCard({
   onLoginClick,
   onBookmarkRemoved,
   selectedSubTags = [],
+  onTagClick,
 }: BlogCardProps) {
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [hoveredTag, setHoveredTag] = useState<string | null>(null);
 
   const handleLinkClick = async (e: React.MouseEvent) => {
     // 조회수 증가 (백그라운드에서 실행)
@@ -144,17 +147,33 @@ export function BlogCard({
                 {blog.tags.slice(0, 6).map((tag) => {
                   const isHighlighted =
                     selectedSubTags.length > 0 && selectedSubTags.includes(tag);
+                  const isHovered = hoveredTag === tag;
                   return (
                     <Badge
                       key={tag}
                       variant={isHighlighted ? "default" : "outline"}
-                      className={`rounded-full ${
+                      className={`rounded-full cursor-pointer transition-all duration-200 flex items-center gap-1 ${
                         isHighlighted
-                          ? ""
-                          : "border-slate-300 dark:border-white/25 text-foreground"
+                          ? "hover:opacity-80"
+                          : "border-slate-300 dark:border-white/25 text-foreground hover:border-primary hover:text-primary"
                       }`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (onTagClick) {
+                          onTagClick(tag);
+                        }
+                      }}
+                      onMouseEnter={() => setHoveredTag(tag)}
+                      onMouseLeave={() => setHoveredTag(null)}
                     >
                       {tag}
+                      {isHovered && !isHighlighted && (
+                        <Plus className="h-3 w-3 ml-0.5" />
+                      )}
+                      {isHighlighted && isHovered && (
+                        <Check className="h-3 w-3 ml-0.5" />
+                      )}
                     </Badge>
                   );
                 })}
