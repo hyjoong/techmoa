@@ -46,7 +46,7 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
   const tagCategory =
     (searchParams.get("tag") as TagCategory) || ("all" as TagCategory);
   const selectedSubTags = searchParams.get("subtags")
-    ? searchParams.get("subtags")!.split(",")
+    ? searchParams.get("subtags")!.split(",").filter((tag) => tag.trim() !== "")
     : [];
 
   // URL 업데이트 함수
