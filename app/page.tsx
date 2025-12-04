@@ -29,12 +29,14 @@ export default function HomePage() {
     viewMode,
     searchQuery,
     tagCategory,
+    selectedSubTags,
     handleBlogTypeChange,
     handleBlogChange,
     handlePageChange,
     handleViewModeChange,
     handleSearchChange,
     handleTagCategoryChange,
+    handleSubTagChange,
   } = useUrlFilters();
 
   // 블로그 데이터 관리 (무한 스크롤)
@@ -45,6 +47,7 @@ export default function HomePage() {
       sortBy,
       searchQuery,
       tagCategory,
+      selectedSubTags,
     });
 
   // 주간 인기글 로드
@@ -113,10 +116,12 @@ export default function HomePage() {
           viewMode={viewMode}
           searchQuery={searchQuery}
           tagCategory={tagCategory}
+          selectedSubTags={selectedSubTags}
           onLoadMore={loadMore}
           onViewModeChange={handleViewModeChange}
           onSearchChange={handleSearchChange}
           onTagCategoryChange={handleTagCategoryChangeWithScroll}
+          onSubTagChange={handleSubTagChange}
           isWeeklyExpanded={isWeeklyExpanded}
           onWeeklyToggle={() => setIsWeeklyExpanded(!isWeeklyExpanded)}
           onLoginClick={() => setAuthModalOpen(true)}
