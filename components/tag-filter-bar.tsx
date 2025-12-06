@@ -50,21 +50,20 @@ export function TagFilterBar({
         })}
       </div>
 
-      {/* 서브태그 (메인 태그가 'all'이 아닐 때만 표시) */}
+      {/* 서브태그 목록: 항상 노출, 선택 시에도 배경 채우지 않음 */}
       {value !== "all" && subTags.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 pl-4 border-l-2 border-primary/30">
+        <div className="flex flex-wrap items-center gap-2 pl-4 border-l-2 border-primary/20">
           {subTags.map((subTag) => {
-            const isSelected =
-              selectedSubTags.length === 0 || selectedSubTags.includes(subTag);
+            const isSelected = selectedSubTags.includes(subTag);
             return (
               <Button
                 key={subTag}
                 variant={isSelected ? "default" : "outline"}
                 size="sm"
-                className={`rounded-full px-3 py-0 h-7 text-xs whitespace-nowrap border-slate-300 dark:border-white/25 ${
+                className={`rounded-full px-3 py-0 h-7 text-xs whitespace-nowrap transition-colors ${
                   isSelected
-                    ? "opacity-100"
-                    : "opacity-60 hover:opacity-100"
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
+                    : "border border-slate-300 dark:border-white/25 text-muted-foreground hover:text-foreground"
                 }`}
                 onClick={() => handleSubTagClick(subTag)}
               >
