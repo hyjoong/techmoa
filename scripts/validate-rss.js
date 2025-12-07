@@ -30,16 +30,15 @@ function extractRssUrls() {
     }
 
     const feedsContent = rssFeedsMatch[1];
-    const urlMatches = feedsContent.match(/url:\s*["']([^"']+)["']/g);
+    const urlMatches = Array.from(
+      feedsContent.matchAll(/^\s*(?!\/\/).*url:\s*["']([^"']+)["']/gm)
+    );
 
-    if (!urlMatches) {
+    if (!urlMatches || urlMatches.length === 0) {
       throw new Error("RSS URL을 찾을 수 없습니다.");
     }
 
-    return urlMatches.map((match) => {
-      const url = match.match(/url:\s*["']([^"']+)["']/)[1];
-      return url;
-    });
+    return urlMatches.map((match) => match[1]);
   } catch (error) {
     console.error("❌ RSS 피드 URL 추출 실패:", error.message);
     process.exit(1);
