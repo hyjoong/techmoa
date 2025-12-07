@@ -14,7 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/use-auth";
 import { signOut } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
-import { User, Settings, Bookmark, LogOut, Loader2, LogIn } from "lucide-react";
+import { User, Bookmark, LogOut, Loader2, LogIn } from "lucide-react";
 
 interface UserMenuProps {
   onLoginClick: () => void;
@@ -111,10 +111,6 @@ export function UserMenu({ onLoginClick }: UserMenuProps) {
             <Bookmark className="mr-2 h-4 w-4" />
             <span>북마크</span>
           </a>
-        </DropdownMenuItem>
-        <DropdownMenuItem>
-          <Settings className="mr-2 h-4 w-4" />
-          <span>설정</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
