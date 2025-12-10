@@ -106,11 +106,6 @@ const RSS_FEEDS = [
     url: "https://medium.com/feed/%EB%A0%88%EB%B8%8C%EC%9E%87-%ED%85%8C%ED%81%AC%EB%B8%94%EB%A1%9C%EA%B7%B8",
     type: "company",
   },
-  // {
-  //   name: "여기어때",
-  //   url: "https://techblog.gccompany.co.kr/feed/tagged/tech",
-  //   type: "company",
-  // },
   {
     name: "요기요",
     url: "https://medium.com/feed/deliverytechkorea",
