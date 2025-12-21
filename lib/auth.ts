@@ -1,5 +1,12 @@
 import { supabase } from "./supabase";
-import { User, Session, AuthError } from "@supabase/supabase-js";
+import {
+  User,
+  Session,
+  AuthError,
+  PostgrestError,
+} from "@supabase/supabase-js";
+
+export type UserPreferences = Record<string, string | number | boolean | null>;
 
 // 사용자 프로필 타입
 export interface UserProfile {
@@ -7,7 +14,7 @@ export interface UserProfile {
   email: string;
   username?: string;
   avatar_url?: string;
-  preferences?: Record<string, any>;
+  preferences?: UserPreferences;
   created_at: string;
   updated_at: string;
 }
@@ -99,18 +106,21 @@ export async function getUserProfile(
           const { profile, error: createError } = await upsertUserProfile({
             id: userId,
             email: user.email || "",
-            username: user.user_metadata?.username || user.email?.split("@")[0] || "user",
+            username:
+              user.user_metadata?.username ||
+              user.email?.split("@")[0] ||
+              "user",
           });
-          
+
           if (createError) {
             console.error("프로필 생성 실패:", createError);
             return null;
           }
-          
+
           return profile;
         }
       }
-      
+
       console.error("사용자 프로필 조회 실패:", error);
       return null;
     }
@@ -127,7 +137,7 @@ export async function upsertUserProfile(
   profile: Partial<UserProfile>
 ): Promise<{
   profile: UserProfile | null;
-  error: any;
+  error: PostgrestError | null;
 }> {
   const { data, error } = await supabase
     .from("user_profiles")
