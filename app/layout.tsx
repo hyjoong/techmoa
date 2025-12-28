@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AppOverlayProvider } from "@/components/overlay-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -101,9 +102,11 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
-          <Toaster />
-          <Analytics />
+          <AppOverlayProvider>
+            {children}
+            <Toaster />
+            <Analytics />
+          </AppOverlayProvider>
         </ThemeProvider>
       </body>
     </html>
