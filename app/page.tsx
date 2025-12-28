@@ -10,14 +10,13 @@ import { useScrollToTop } from "@/hooks/use-scroll-to-top";
 import { useUrlFilters } from "@/hooks/use-url-filters";
 import { useInfiniteBlogData } from "@/hooks/use-infinite-blog-data";
 import { Blog, fetchWeeklyPopularBlogs } from "@/lib/supabase";
-import { AuthModal } from "@/components/auth/auth-modal";
+import { openAuthModal } from "@/components/auth/open-auth-modal";
 import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
 
 export default function HomePage() {
   const [popularBlogs, setPopularBlogs] = useState<Blog[]>([]);
   const [isWeeklyExpanded, setIsWeeklyExpanded] = useState(true);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
   const router = useRouter();
   const scrollToTop = useScrollToTop();
 
@@ -103,7 +102,7 @@ export default function HomePage() {
         onBlogTypeChange={handleBlogTypeChangeWithScroll}
         onBlogChange={handleBlogChangeWithScroll}
         onLogoClick={handleLogoClick}
-        onLoginClick={() => setAuthModalOpen(true)}
+        onLoginClick={() => openAuthModal()}
       />
 
       <div className="container mx-auto px-4 flex gap-8 pt-24">
@@ -124,7 +123,7 @@ export default function HomePage() {
           onSubTagChange={handleSubTagChange}
           isWeeklyExpanded={isWeeklyExpanded}
           onWeeklyToggle={() => setIsWeeklyExpanded(!isWeeklyExpanded)}
-          onLoginClick={() => setAuthModalOpen(true)}
+          onLoginClick={() => openAuthModal()}
         />
         {isWeeklyExpanded ? (
           <>
@@ -145,9 +144,6 @@ export default function HomePage() {
 
       {/* 모든 데이터를 로드했을 때만 푸터 표시 */}
       {!hasMore && !loading && blogs.length > 0 && <Footer />}
-
-      {/* 인증 모달 */}
-      <AuthModal open={authModalOpen} onOpenChange={setAuthModalOpen} />
     </div>
   );
 }
