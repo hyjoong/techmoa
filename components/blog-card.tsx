@@ -56,6 +56,14 @@ export function BlogCard({
     return views.toString();
   };
 
+  const handleTagKeyDown = (event: React.KeyboardEvent, tag: string) => {
+    if (!onTagClick) return;
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    event.stopPropagation();
+    onTagClick(tag);
+  };
+
   // 썸네일 표시 여부 결정
   const shouldShowThumbnail = blog.thumbnail_url && !imageError;
   const logoUrl = getLogoUrl(blog.author);
@@ -157,6 +165,9 @@ export function BlogCard({
                           ? "hover:opacity-80"
                           : "border-slate-300 dark:border-white/25 text-foreground hover:border-primary hover:text-primary"
                       }`}
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={isHighlighted}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -164,6 +175,7 @@ export function BlogCard({
                           onTagClick(tag);
                         }
                       }}
+                      onKeyDown={(event) => handleTagKeyDown(event, tag)}
                       onMouseEnter={() => setHoveredTag(tag)}
                       onMouseLeave={() => setHoveredTag(null)}
                     >
