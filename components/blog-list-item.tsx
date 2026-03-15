@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { BookmarkButton } from "@/components/bookmark-button";
 import { Building2, Calendar, Eye, User } from "lucide-react";
 import Image from "next/image";
-import { incrementViews, type Blog } from "@/lib/supabase";
+import { incrementViews, type Blog } from "@/lib/db";
 import { getLogoUrl } from "@/lib/logos";
 import { useState } from "react";
 import { isFlutterWebView } from "@/lib/webview-bridge";

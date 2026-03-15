@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AppOverlayProvider } from "@/components/overlay-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { Analytics } from "@vercel/analytics/next";
+import { AuthProvider } from "@/lib/auth-provider";
 
 export const metadata: Metadata = {
   title: {
@@ -96,18 +97,20 @@ export default function RootLayout({
         <link rel="icon" type="image/x-icon" href="/favicon.ico" />
       </head>
       <body suppressHydrationWarning>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <AppOverlayProvider>
-            {children}
-            <Toaster />
-            <Analytics />
-          </AppOverlayProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <AppOverlayProvider>
+              {children}
+              <Toaster />
+              <Analytics />
+            </AppOverlayProvider>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

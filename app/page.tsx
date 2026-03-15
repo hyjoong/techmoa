@@ -9,7 +9,7 @@ import { Footer } from "@/components/footer";
 import { useScrollToTop } from "@/hooks/use-scroll-to-top";
 import { useUrlFilters } from "@/hooks/use-url-filters";
 import { useInfiniteBlogData } from "@/hooks/use-infinite-blog-data";
-import { Blog, fetchWeeklyPopularBlogs } from "@/lib/supabase";
+import { Blog, fetchWeeklyPopularBlogs } from "@/lib/db";
 import { openAuthModal } from "@/components/auth/open-auth-modal";
 import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";

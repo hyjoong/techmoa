@@ -1,16 +1,8 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
+// NextAuth가 /api/auth/callback/*을 처리하므로
+// 이 라우트는 레거시 호환용 리다이렉트만 수행합니다.
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
-  const code = requestUrl.searchParams.get("code");
-
-  if (code) {
-    const supabase = createRouteHandlerClient({ cookies });
-    await supabase.auth.exchangeCodeForSession(code);
-  }
-
-  // URL to redirect to after sign in process completes
   return NextResponse.redirect(requestUrl.origin);
 }

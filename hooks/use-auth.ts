@@ -1,122 +1,94 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { User } from "@supabase/supabase-js";
+import { useSession } from "next-auth/react";
 import {
-  getCurrentUser,
-  getCurrentSession,
   getUserProfile,
-  onAuthStateChange,
-  UserProfile,
   upsertUserProfile,
+  UserProfile,
 } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
 
 interface AuthState {
-  user: User | null;
+  user: {
+    id: string;
+    email?: string | null;
+    name?: string | null;
+    image?: string | null;
+    user_metadata?: {
+      avatar_url?: string;
+      full_name?: string;
+      username?: string;
+    };
+  } | null;
   profile: UserProfile | null;
   session: any;
   loading: boolean;
 }
 
 export function useAuth() {
-  const [authState, setAuthState] = useState<AuthState>({
-    user: null,
-    profile: null,
-    session: null,
-    loading: true,
-  });
-  const [isInitialized, setIsInitialized] = useState(false);
+  const { data: session, status } = useSession();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
   const { toast } = useToast();
 
-  // 인증 상태 초기화
+  const loading = status === "loading";
+
+  // 세션 변경 시 프로필 로드
   useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        const [user, session] = await Promise.all([
-          getCurrentUser(),
-          getCurrentSession(),
-        ]);
-
-        let profile = null;
-        if (user) {
-          profile = await getUserProfile(user.id);
+    const loadProfile = async () => {
+      if (session?.user?.id) {
+        setProfileLoading(true);
+        try {
+          const p = await getUserProfile(session.user.id);
+          setProfile(p);
+        } catch (error) {
+          console.error("프로필 로드 실패:", error);
+        } finally {
+          setProfileLoading(false);
         }
-
-        setAuthState({
-          user,
-          profile,
-          session,
-          loading: false,
-        });
-        setIsInitialized(true);
-      } catch (error) {
-        console.error("인증 상태 초기화 실패:", error);
-        setAuthState((prev) => ({ ...prev, loading: false }));
-        setIsInitialized(true);
+      } else {
+        setProfile(null);
       }
     };
 
-    initializeAuth();
+    loadProfile();
+  }, [session?.user?.id]);
 
-    // 인증 상태 변경 리스너
-    const {
-      data: { subscription },
-    } = onAuthStateChange(async (user) => {
-      try {
-        let profile = null;
-        if (user) {
-          profile = await getUserProfile(user.id);
-        }
-
-        setAuthState({
-          user,
-          profile,
-          session: user ? await getCurrentSession() : null,
-          loading: false,
-        });
-
-        // 초기화 완료 후에만 토스트 표시 (초기 로드 시 토스트 방지)
-        if (isInitialized) {
-          if (user) {
-            toast({
-              title: "로그인 성공",
-              description: "환영합니다!",
-            });
-          } else {
-            toast({
-              title: "로그아웃",
-              description: "안전하게 로그아웃되었습니다.",
-            });
-          }
-        }
-      } catch (error) {
-        console.error("인증 상태 변경 처리 실패:", error);
+  // 사용자 객체 구성 (기존 인터페이스 호환)
+  const user = session?.user
+    ? {
+        id: (session.user as any).id,
+        email: session.user.email,
+        name: session.user.name,
+        image: session.user.image,
+        user_metadata: {
+          avatar_url: session.user.image || undefined,
+          full_name: session.user.name || undefined,
+          username: profile?.username || session.user.name || undefined,
+        },
       }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [toast]);
+    : null;
 
   // 프로필 업데이트
   const updateProfile = async (updates: Partial<UserProfile>) => {
-    if (!authState.user) return;
+    if (!session?.user) return;
 
     try {
-      const { profile, error } = await upsertUserProfile({
-        id: authState.user!.id,
+      const { profile: updatedProfile, error } = await upsertUserProfile({
+        id: (session.user as any).id,
         ...updates,
       });
 
       if (error) throw error;
 
-      setAuthState((prev) => ({ ...prev, profile }));
+      setProfile(updatedProfile);
       toast({
         title: "프로필 업데이트",
         description: "프로필이 성공적으로 업데이트되었습니다.",
       });
 
-      return profile;
+      return updatedProfile;
     } catch (error) {
       console.error("프로필 업데이트 실패:", error);
       toast({
@@ -129,8 +101,11 @@ export function useAuth() {
   };
 
   return {
-    ...authState,
+    user,
+    profile,
+    session,
+    loading: loading || profileLoading,
     updateProfile,
-    isAuthenticated: !!authState.user,
+    isAuthenticated: !!session?.user,
   };
 }

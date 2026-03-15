@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 
 import { Building2, Calendar, Eye, User, Plus, Check } from "lucide-react";
 import Image from "next/image";
-import { incrementViews, type Blog } from "@/lib/supabase";
+import { incrementViews, type Blog } from "@/lib/db";
 import { getLogoUrl } from "@/lib/logos";
 import { useState } from "react";
 import { isFlutterWebView } from "@/lib/webview-bridge";

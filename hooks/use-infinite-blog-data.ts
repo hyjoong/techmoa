@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Blog, fetchBlogs } from "@/lib/supabase";
+import type { Blog } from "@/lib/db";
 import { useToast } from "@/hooks/use-toast";
 import type { BlogType, SortBy } from "./use-url-filters";
 import { getTagsForCategory, type TagCategory } from "@/lib/tag-filters";
@@ -26,6 +26,33 @@ export interface InfiniteBlogDataFilters {
   selectedSubTags: string[];
 }
 
+async function fetchBlogsFromAPI(params: {
+  page: number;
+  limit: number;
+  sortBy: string;
+  blogType: string;
+  author?: string;
+  search?: string;
+  tags?: string[];
+}) {
+  const searchParams = new URLSearchParams({
+    page: params.page.toString(),
+    limit: params.limit.toString(),
+    sortBy: params.sortBy,
+    blogType: params.blogType,
+  });
+
+  if (params.author) searchParams.set("author", params.author);
+  if (params.search) searchParams.set("search", params.search);
+  if (params.tags && params.tags.length > 0) {
+    searchParams.set("tags", params.tags.join(","));
+  }
+
+  const res = await fetch(`/api/blogs?${searchParams.toString()}`);
+  if (!res.ok) throw new Error("블로그 조회 실패");
+  return res.json();
+}
+
 export function useInfiniteBlogData(
   filters: InfiniteBlogDataFilters
 ): InfiniteBlogDataState {
@@ -45,15 +72,14 @@ export function useInfiniteBlogData(
 
       const tags = getTagsForCategory(filters.tagCategory, filters.selectedSubTags);
 
-      const result = await fetchBlogs({
+      const result = await fetchBlogsFromAPI({
         page: 1,
         limit: ITEMS_PER_PAGE,
         sortBy: filters.sortBy,
         blogType: filters.blogType,
-        author:
-          filters.selectedBlog === "all" ? undefined : filters.selectedBlog,
+        author: filters.selectedBlog === "all" ? undefined : filters.selectedBlog,
         search: filters.searchQuery || undefined,
-        tags: tags,
+        tags,
       });
 
       setBlogs(result.blogs);
@@ -79,13 +105,12 @@ export function useInfiniteBlogData(
       setLoadingMore(true);
       const nextPage = currentPage + 1;
 
-      const result = await fetchBlogs({
+      const result = await fetchBlogsFromAPI({
         page: nextPage,
         limit: ITEMS_PER_PAGE,
         sortBy: filters.sortBy,
         blogType: filters.blogType,
-        author:
-          filters.selectedBlog === "all" ? undefined : filters.selectedBlog,
+        author: filters.selectedBlog === "all" ? undefined : filters.selectedBlog,
         search: filters.searchQuery || undefined,
         tags: getTagsForCategory(filters.tagCategory, filters.selectedSubTags),
       });
@@ -115,7 +140,7 @@ export function useInfiniteBlogData(
     filters.selectedBlog,
     filters.searchQuery,
     filters.tagCategory,
-    filters.selectedSubTags.join(","), // 배열을 문자열로 변환하여 비교
+    filters.selectedSubTags.join(","),
   ]);
 
   return {

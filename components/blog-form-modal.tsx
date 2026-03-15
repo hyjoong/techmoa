@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { X } from "lucide-react"
-import { createBlog, updateBlog, type Blog } from "@/lib/supabase"
+import { createBlog, updateBlog, type Blog } from "@/lib/db"
 import { useToast } from "@/hooks/use-toast"
 
 interface BlogFormModalProps {

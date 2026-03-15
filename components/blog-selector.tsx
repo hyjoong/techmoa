@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Building2, User, Globe } from "lucide-react";
 import Image from "next/image";
-import { fetchAvailableBlogs } from "@/lib/supabase";
+import { fetchAvailableBlogs } from "@/lib/db";
 import { getLogoUrl } from "@/lib/logos";
 
 interface BlogSelectorProps {

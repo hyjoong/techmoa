@@ -8,7 +8,7 @@ import {
   TAG_FILTER_OPTIONS,
   type TagCategory,
 } from "@/lib/tag-filters";
-import type { Blog } from "@/lib/supabase";
+import type { Blog } from "@/lib/db";
 import { ChevronLeft } from "lucide-react";
 
 interface MainContentProps {
