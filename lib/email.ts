@@ -1,6 +1,8 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
 
 const EMAIL_FROM = process.env.EMAIL_FROM || "TechMoa <noreply@techmoa.dev>";
 
@@ -76,6 +78,11 @@ export async function sendNewArticlesEmail(data: NewArticleEmailData) {
   `;
 
   try {
+    if (!resend) {
+      console.warn("RESEND_API_KEY가 설정되지 않아 이메일을 발송하지 않습니다.");
+      return { success: false, error: "RESEND_API_KEY not configured" };
+    }
+
     const { data: result, error } = await resend.emails.send({
       from: EMAIL_FROM,
       to: subscriberEmail,
@@ -131,6 +138,11 @@ export async function sendWelcomeEmail(email: string, name?: string, unsubscribe
   `;
 
   try {
+    if (!resend) {
+      console.warn("RESEND_API_KEY가 설정되지 않아 이메일을 발송하지 않습니다.");
+      return { success: false, error: "RESEND_API_KEY not configured" };
+    }
+
     const { error } = await resend.emails.send({
       from: EMAIL_FROM,
       to: email,
