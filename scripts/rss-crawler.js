@@ -66,11 +66,11 @@ const RSS_FEEDS = [
     url: "https://techblog.lycorp.co.jp/ko/feed/index.xml",
     type: "company",
   },
-  {
-    name: "마켓컬리",
-    url: "https://helloworld.kurly.com/feed.xml",
-    type: "company",
-  },
+  // {
+  //   name: "마켓컬리",
+  //   url: "https://helloworld.kurly.com/feed.xml",
+  //   type: "company",
+  // }, // RSS 피드 403 차단
   {
     name: "에잇퍼센트",
     url: "https://8percent.github.io/feed.xml",
