@@ -31,7 +31,7 @@ function extractRssUrls() {
 
     const feedsContent = rssFeedsMatch[1];
     const urlMatches = Array.from(
-      feedsContent.matchAll(/^\s*(?!\/\/).*url:\s*["']([^"']+)["']/gm)
+      feedsContent.matchAll(/^(?!\s*\/\/).*url:\s*["']([^"']+)["']/gm)
     );
 
     if (!urlMatches || urlMatches.length === 0) {
