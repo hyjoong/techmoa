@@ -7,6 +7,7 @@ import {
   sendBatchNotifications,
 } from "./push-notification.js";
 import { generateTagsForArticle, baseTagsFromFeedCategory } from "./ai-tags.js";
+import { sendDiscordNotification } from "./discord-webhook.js";
 
 /**
  * RSS 피드 크롤러 (중복 방지 개선 버전)
@@ -822,6 +823,9 @@ async function main() {
     if (allNewArticles.length > 0) {
       console.log("\n📱 푸시 알림 처리 중...");
       await sendBatchNotifications(allNewArticles);
+
+      // 🔔 Discord 웹훅 알림
+      await sendDiscordNotification(allNewArticles);
     }
   } catch (error) {
     console.error("❌ 크롤링 중 치명적 오류:", error.message);
