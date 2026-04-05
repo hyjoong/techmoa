@@ -24,7 +24,8 @@
 
 ### 🤖 자동 데이터 수집
 
-- RSS 피드 자동 크롤링
+- RSS 피드 자동 크롤링 (하루 2회: 오전 7시, 오후 7시 KST)
+- 새 글 발견 시 Discord 웹훅 알림
 
 ## 🛠 기술 스택
 
@@ -60,6 +61,7 @@ cp .env.example .env.local
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
    SUPABASE_SERVICE_ROLE_KEY=your_service_role_key  # RSS 크롤러용
+   DISCORD_WEBHOOK_URL=your_discord_webhook_url    # Discord 알림용 (선택)
    ```
 
 3. 데이터베이스 스키마 생성:
