@@ -6,8 +6,9 @@ import { Building2, Calendar, Eye, User } from "lucide-react";
 import Image from "next/image";
 import { incrementViews, type Blog } from "@/lib/supabase";
 import { getLogoUrl } from "@/lib/logos";
-import { useState } from "react";
+import { memo, useCallback, useState } from "react";
 import { isFlutterWebView } from "@/lib/webview-bridge";
+import { formatBlogDate, formatViews } from "@/lib/format";
 
 interface BlogListItemProps {
   blog: Blog;
@@ -15,7 +16,7 @@ interface BlogListItemProps {
   onBookmarkRemoved?: () => void;
 }
 
-export function BlogListItem({
+function BlogListItemComponent({
   blog,
   onLoginClick,
   onBookmarkRemoved,
@@ -23,7 +24,7 @@ export function BlogListItem({
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  const handleLinkClick = async (e: React.MouseEvent) => {
+  const handleLinkClick = useCallback(() => {
     // 조회수 증가 (백그라운드에서 실행)
     try {
       incrementViews(blog.id);
@@ -31,23 +32,7 @@ export function BlogListItem({
       console.error("조회수 증가 실패:", error);
     }
     // 링크의 기본 동작을 허용 (새 탭에서 열기)
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const formatViews = (views: number) => {
-    if (views >= 1000) {
-      return `${(views / 1000).toFixed(1)}k`;
-    }
-    return views.toString();
-  };
+  }, [blog.id]);
 
   // 썸네일 표시 여부 결정
   const shouldShowThumbnail = blog.thumbnail_url && !imageError;
@@ -136,7 +121,7 @@ export function BlogListItem({
                     <div className="flex items-center gap-1 text-sm text-muted-foreground flex-shrink-0">
                       <Calendar className="h-4 w-4 flex-shrink-0" />
                       <span className="whitespace-nowrap">
-                        {formatDate(blog.published_at)}
+                        {formatBlogDate(blog.published_at)}
                       </span>
                     </div>
 
@@ -172,3 +157,5 @@ export function BlogListItem({
     </div>
   );
 }
+
+export const BlogListItem = memo(BlogListItemComponent);

@@ -10,6 +10,7 @@ import {
 } from "@/lib/tag-filters";
 import type { Blog } from "@/lib/supabase";
 import { ChevronLeft } from "lucide-react";
+import { useCallback } from "react";
 
 interface MainContentProps {
   blogs: Blog[];
@@ -51,26 +52,29 @@ export function MainContent({
   onLoginClick,
 }: MainContentProps) {
   // 태그 클릭 시 필터에 추가
-  const handleTagClick = (tag: string) => {
-    // 클릭한 태그가 속한 카테고리 찾기
-    const matchedCategory = TAG_FILTER_OPTIONS.find((option) =>
-      option.tags.includes(tag)
-    );
+  const handleTagClick = useCallback(
+    (tag: string) => {
+      // 클릭한 태그가 속한 카테고리 찾기
+      const matchedCategory = TAG_FILTER_OPTIONS.find((option) =>
+        option.tags.includes(tag)
+      );
 
-    // 이미 선택된 태그면 제거
-    if (selectedSubTags.includes(tag)) {
-      onSubTagChange(selectedSubTags.filter((t) => t !== tag));
-    } else {
-      // 태그 추가하고, 해당 카테고리로 전환
-      if (matchedCategory && tagCategory !== matchedCategory.id) {
-        onTagCategoryChange(matchedCategory.id);
+      // 이미 선택된 태그면 제거
+      if (selectedSubTags.includes(tag)) {
+        onSubTagChange(selectedSubTags.filter((t) => t !== tag));
+      } else {
+        // 태그 추가하고, 해당 카테고리로 전환
+        if (matchedCategory && tagCategory !== matchedCategory.id) {
+          onTagCategoryChange(matchedCategory.id);
+        }
+        onSubTagChange([...selectedSubTags, tag]);
       }
-      onSubTagChange([...selectedSubTags, tag]);
-    }
 
-    // 상단으로 스크롤
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+      // 상단으로 스크롤
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    [selectedSubTags, tagCategory, onSubTagChange, onTagCategoryChange]
+  );
 
   return (
     <main className="flex-1 pt-4">

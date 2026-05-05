@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/header";
 import { MainContent } from "@/components/main-content";
@@ -64,35 +64,56 @@ export default function HomePage() {
   }, []);
 
   // 로고 클릭 시 초기화
-  const handleLogoClick = () => {
+  const handleLogoClick = useCallback(() => {
     router.push("/");
-  };
+  }, [router]);
 
   // 블로그 타입 변경 (다른 타입으로 변경될 때만 스크롤)
-  const handleBlogTypeChangeWithScroll = (type: typeof blogType) => {
-    const shouldScroll = type !== blogType; // 타입이 변경되는 경우에만 스크롤
-    handleBlogTypeChange(type);
-    if (shouldScroll) {
-      scrollToTop();
-    }
-  };
+  const handleBlogTypeChangeWithScroll = useCallback(
+    (type: typeof blogType) => {
+      const shouldScroll = type !== blogType;
+      handleBlogTypeChange(type);
+      if (shouldScroll) {
+        scrollToTop();
+      }
+    },
+    [blogType, handleBlogTypeChange, scrollToTop]
+  );
 
   // 블로그 필터 변경 (다른 블로그로 변경될 때만 스크롤)
-  const handleBlogChangeWithScroll = (blog: string) => {
-    const shouldScroll = blog !== selectedBlog; // 블로그가 변경되는 경우에만 스크롤
-    handleBlogChange(blog);
-    if (shouldScroll) {
-      scrollToTop();
-    }
-  };
+  const handleBlogChangeWithScroll = useCallback(
+    (blog: string) => {
+      const shouldScroll = blog !== selectedBlog;
+      handleBlogChange(blog);
+      if (shouldScroll) {
+        scrollToTop();
+      }
+    },
+    [selectedBlog, handleBlogChange, scrollToTop]
+  );
 
-  const handleTagCategoryChangeWithScroll = (category: typeof tagCategory) => {
-    const shouldScroll = category !== tagCategory;
-    handleTagCategoryChange(category);
-    if (shouldScroll) {
-      scrollToTop();
-    }
-  };
+  const handleTagCategoryChangeWithScroll = useCallback(
+    (category: typeof tagCategory) => {
+      const shouldScroll = category !== tagCategory;
+      handleTagCategoryChange(category);
+      if (shouldScroll) {
+        scrollToTop();
+      }
+    },
+    [tagCategory, handleTagCategoryChange, scrollToTop]
+  );
+
+  const handleLoginClick = useCallback(() => {
+    openAuthModal();
+  }, []);
+
+  const handleWeeklyToggle = useCallback(() => {
+    setIsWeeklyExpanded((prev) => !prev);
+  }, []);
+
+  const handleWeeklyCollapse = useCallback(() => {
+    setIsWeeklyExpanded(false);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -102,7 +123,7 @@ export default function HomePage() {
         onBlogTypeChange={handleBlogTypeChangeWithScroll}
         onBlogChange={handleBlogChangeWithScroll}
         onLogoClick={handleLogoClick}
-        onLoginClick={() => openAuthModal()}
+        onLoginClick={handleLoginClick}
       />
 
       <div className="container mx-auto px-4 flex gap-8 pt-24">
@@ -122,8 +143,8 @@ export default function HomePage() {
           onTagCategoryChange={handleTagCategoryChangeWithScroll}
           onSubTagChange={handleSubTagChange}
           isWeeklyExpanded={isWeeklyExpanded}
-          onWeeklyToggle={() => setIsWeeklyExpanded(!isWeeklyExpanded)}
-          onLoginClick={() => openAuthModal()}
+          onWeeklyToggle={handleWeeklyToggle}
+          onLoginClick={handleLoginClick}
         />
         {isWeeklyExpanded ? (
           <>
@@ -131,7 +152,7 @@ export default function HomePage() {
               <Button
                 variant="outline"
                 size="icon"
-                onClick={() => setIsWeeklyExpanded(false)}
+                onClick={handleWeeklyCollapse}
                 className="absolute top-20 -left-4 h-8 w-8 rounded-full bg-background hover:bg-muted"
               >
                 <ChevronRight className="h-4 w-4" />

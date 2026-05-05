@@ -8,8 +8,9 @@ import { Building2, Calendar, Eye, User, Plus, Check } from "lucide-react";
 import Image from "next/image";
 import { incrementViews, type Blog } from "@/lib/supabase";
 import { getLogoUrl } from "@/lib/logos";
-import { useState } from "react";
+import { memo, useCallback, useState } from "react";
 import { isFlutterWebView } from "@/lib/webview-bridge";
+import { formatBlogDate, formatViews } from "@/lib/format";
 
 interface BlogCardProps {
   blog: Blog;
@@ -19,7 +20,7 @@ interface BlogCardProps {
   onTagClick?: (tag: string) => void;
 }
 
-export function BlogCard({
+function BlogCardComponent({
   blog,
   onLoginClick,
   onBookmarkRemoved,
@@ -30,7 +31,7 @@ export function BlogCard({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [hoveredTag, setHoveredTag] = useState<string | null>(null);
 
-  const handleLinkClick = async (e: React.MouseEvent) => {
+  const handleLinkClick = useCallback(() => {
     // 조회수 증가 (백그라운드에서 실행)
     try {
       incrementViews(blog.id);
@@ -38,31 +39,18 @@ export function BlogCard({
       console.error("조회수 증가 실패:", error);
     }
     // 링크의 기본 동작을 허용 (새 탭에서 열기)
-  };
+  }, [blog.id]);
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
-
-  const formatViews = (views: number) => {
-    if (views >= 1000) {
-      return `${(views / 1000).toFixed(1)}k`;
-    }
-    return views.toString();
-  };
-
-  const handleTagKeyDown = (event: React.KeyboardEvent, tag: string) => {
-    if (!onTagClick) return;
-    if (event.key !== "Enter" && event.key !== " ") return;
-    event.preventDefault();
-    event.stopPropagation();
-    onTagClick(tag);
-  };
+  const handleTagKeyDown = useCallback(
+    (event: React.KeyboardEvent, tag: string) => {
+      if (!onTagClick) return;
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      event.stopPropagation();
+      onTagClick(tag);
+    },
+    [onTagClick],
+  );
 
   // 썸네일 표시 여부 결정
   const shouldShowThumbnail = blog.thumbnail_url && !imageError;
@@ -196,7 +184,7 @@ export function BlogCard({
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
-                  {formatDate(blog.published_at)}
+                  {formatBlogDate(blog.published_at)}
                 </div>
                 <div className="flex items-center gap-1">
                   <Eye className="h-3 w-3" />
@@ -225,3 +213,5 @@ export function BlogCard({
     </div>
   );
 }
+
+export const BlogCard = memo(BlogCardComponent);
