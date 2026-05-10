@@ -31,16 +31,20 @@ interface AuthorInfo {
 // 사용 가능한 블로그 목록 조회 (기업/개인별)
 export async function fetchAvailableBlogs() {
   try {
-    // 카테고리 정보를 포함하여 조회
-    const { data: companyData, error: companyError } = await supabase
-      .from("blogs")
-      .select("author, category")
-      .eq("blog_type", "company");
-
-    const { data: personalData, error: personalError } = await supabase
-      .from("blogs")
-      .select("author, category")
-      .eq("blog_type", "personal");
+    // 카테고리 정보를 포함하여 조회 (기업/개인 병렬 요청)
+    const [
+      { data: companyData, error: companyError },
+      { data: personalData, error: personalError },
+    ] = await Promise.all([
+      supabase
+        .from("blogs")
+        .select("author, category")
+        .eq("blog_type", "company"),
+      supabase
+        .from("blogs")
+        .select("author, category")
+        .eq("blog_type", "personal"),
+    ]);
 
     if (companyError) {
       throw new Error(`기업 블로그 목록 조회 실패: ${companyError.message}`);
