@@ -1,6 +1,7 @@
 name: RSS Feed Validation
 
 on:
+  workflow_dispatch: # 수동 실행 가능
   pull_request:
     paths:
       - "scripts/rss-crawler.js"
@@ -37,7 +38,7 @@ jobs:
           version: 10
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Run RSS validation
         run: pnpm run validate-rss

@@ -37,7 +37,7 @@ jobs:
           version: 10
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Run RSS crawler
         run: pnpm run crawl-rss
