@@ -12,6 +12,7 @@
 import fs from "fs";
 import axios from "axios";
 import xml2js from "xml2js";
+import { RSS_FEEDS } from "./rss/feeds.js";
 
 // 커맨드 라인 인수 파싱
 const args = process.argv.slice(2);
@@ -19,30 +20,16 @@ const verbose = args.includes("--verbose");
 const urlIndex = args.indexOf("--url");
 const specificUrl = urlIndex !== -1 ? args[urlIndex + 1] : null;
 
-// RSS 피드 목록에서 URL 추출
+// RSS 피드 목록에서 URL 추출 (크롤러와 동일한 단일 소스 사용)
 function extractRssUrls() {
-  try {
-    const content = fs.readFileSync("scripts/rss-crawler.js", "utf8");
-    const rssFeedsMatch = content.match(/const RSS_FEEDS = \[([\s\S]*?)\];/);
+  const urls = RSS_FEEDS.map((feed) => feed.url).filter(Boolean);
 
-    if (!rssFeedsMatch) {
-      throw new Error("RSS_FEEDS 배열을 찾을 수 없습니다.");
-    }
-
-    const feedsContent = rssFeedsMatch[1];
-    const urlMatches = Array.from(
-      feedsContent.matchAll(/^(?!\s*\/\/).*url:\s*["']([^"']+)["']/gm)
-    );
-
-    if (!urlMatches || urlMatches.length === 0) {
-      throw new Error("RSS URL을 찾을 수 없습니다.");
-    }
-
-    return urlMatches.map((match) => match[1]);
-  } catch (error) {
-    console.error("❌ RSS 피드 URL 추출 실패:", error.message);
+  if (urls.length === 0) {
+    console.error("❌ RSS URL을 찾을 수 없습니다.");
     process.exit(1);
   }
+
+  return urls;
 }
 
 // RSS 피드 유효성 검사 (재시도 로직 포함)
@@ -189,29 +176,32 @@ async function main() {
     let validCount = 0;
     let invalidCount = 0;
 
-    for (const url of urls) {
-      const result = await validateRssFeed(url);
-      results.push(result);
+    // 서로 다른 도메인이 대부분이라 청크 단위로 동시 검사 (429는 validateRssFeed 내부에서 재시도)
+    const CONCURRENCY = urls.length > 1 ? 8 : 1;
+    for (let i = 0; i < urls.length; i += CONCURRENCY) {
+      const chunk = urls.slice(i, i + CONCURRENCY);
+      const chunkResults = await Promise.all(
+        chunk.map((url) => validateRssFeed(url))
+      );
 
-      if (result.valid) {
-        validCount++;
-        console.log(`✅ ${url}`);
-        if (verbose && result.structure) {
-          console.log(
-            `   └─ 구조: ${result.structure}, Content-Type: ${result.contentType}`
-          );
-          if (result.warning) {
-            console.log(`   ⚠️  ${result.warning}`);
+      for (const result of chunkResults) {
+        results.push(result);
+
+        if (result.valid) {
+          validCount++;
+          console.log(`✅ ${result.url}`);
+          if (verbose && result.structure) {
+            console.log(
+              `   └─ 구조: ${result.structure}, Content-Type: ${result.contentType}`
+            );
+            if (result.warning) {
+              console.log(`   ⚠️  ${result.warning}`);
+            }
           }
+        } else {
+          invalidCount++;
+          console.log(`❌ ${result.url} - ${result.error}`);
         }
-      } else {
-        invalidCount++;
-        console.log(`❌ ${url} - ${result.error}`);
-      }
-
-      // API 부하 방지를 위한 간격
-      if (urls.length > 1) {
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // 기존 1초 유지
       }
     }
 

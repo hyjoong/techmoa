@@ -114,3 +114,10 @@ node_modules/
 
 # TernJS port file
 .tern-port
+
+# RSS 스크립트 실행 결과 (CI 아티팩트로만 사용)
+rss-validation-results.json
+rss-crawl-results.json
+
+# Playwright MCP 임시 디렉터리
+.playwright-mcp/
