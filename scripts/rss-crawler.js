@@ -78,7 +78,7 @@ const RSS_FEEDS = [
   },
   {
     name: "쏘카",
-    url: "https://tech.socarcorp.kr/feed",
+    url: "https://tech.socar.kr/rss.xml",
     type: "company",
   },
   {
