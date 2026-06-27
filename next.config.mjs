@@ -5,7 +5,9 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    unoptimized: true,
+    // 썸네일 출처가 임의의 외부 블로그 도메인이라 와일드카드 허용
+    // (새 피드/글마다 새 도메인이 생기므로 명시적 목록은 곧 깨짐)
+    remotePatterns: [{ protocol: "https", hostname: "**" }],
   },
 }
 

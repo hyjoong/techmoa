@@ -60,6 +60,7 @@ function BlogListItemComponent({
                     src={blog.thumbnail_url!}
                     alt={blog.title}
                     fill
+                    sizes="192px"
                     className={`object-cover group-hover:scale-105 transition-all duration-300 ${
                       imageLoaded ? "opacity-100" : "opacity-0"
                     }`}

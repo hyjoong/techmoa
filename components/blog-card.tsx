@@ -76,6 +76,7 @@ function BlogCardComponent({
                   src={blog.thumbnail_url!}
                   alt={blog.title}
                   fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
                   className={`object-cover group-hover:scale-105 transition-all duration-300 ${
                     imageLoaded ? "opacity-100" : "opacity-0"
                   }`}
