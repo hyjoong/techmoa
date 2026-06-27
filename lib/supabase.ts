@@ -202,51 +202,6 @@ export async function fetchBlogs({
   };
 }
 
-// 블로그 생성
-export async function createBlog(
-  blogData: Omit<Blog, "id" | "created_at" | "updated_at">
-) {
-  const { data, error } = await supabase
-    .from("blogs")
-    .insert([blogData])
-    .select()
-    .single();
-
-  if (error) {
-    throw new Error(`블로그 생성 실패: ${error.message}`);
-  }
-
-  return data as Blog;
-}
-
-// 블로그 수정
-export async function updateBlog(
-  id: number,
-  blogData: Partial<Omit<Blog, "id" | "created_at" | "updated_at">>
-) {
-  const { data, error } = await supabase
-    .from("blogs")
-    .update({ ...blogData, updated_at: new Date().toISOString() })
-    .eq("id", id)
-    .select()
-    .single();
-
-  if (error) {
-    throw new Error(`블로그 수정 실패: ${error.message}`);
-  }
-
-  return data as Blog;
-}
-
-// 블로그 삭제
-export async function deleteBlog(id: number) {
-  const { error } = await supabase.from("blogs").delete().eq("id", id);
-
-  if (error) {
-    throw new Error(`블로그 삭제 실패: ${error.message}`);
-  }
-}
-
 // 조회수 증가
 export async function incrementViews(id: number) {
   const { error } = await supabase.rpc("increment_views", { blog_id: id });
