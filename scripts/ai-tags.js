@@ -78,6 +78,16 @@ const mergeAndDedupe = (tags) => {
 
 const parseTagsFromText = (text) => {
   if (!text) return [];
+
+  try {
+    const parsed = JSON.parse(text);
+    if (Array.isArray(parsed)) {
+      return mergeAndDedupe(parsed);
+    }
+  } catch {
+    // Fall back to comma/newline parsing for models that do not return JSON.
+  }
+
   // 쉼표/줄바꿈 기준 분리
   const parts = text
     .replace(/[\[\]]/g, "")
@@ -90,11 +100,9 @@ const parseTagsFromText = (text) => {
 const buildPrompt = ({ title, summary = "", author = "" }) => {
   const allowed = ALLOWED_TAGS.join(", ");
   return `
-You are a concise tagger for a tech blog aggregator. Choose 3-6 tags that best describe the article.
-
 Rules:
 - Use ONLY tags from this allowed list: ${allowed}
-- Respond as a comma-separated list only. No prose, no markdown.
+- Respond as a JSON array of strings only. No prose, no markdown.
 - Prefer broader tags if unsure.
 
 Article:
@@ -118,9 +126,17 @@ async function generateWithFireworks(prompt) {
         },
         body: JSON.stringify({
           model: FIREWORKS_MODEL,
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.2,
-          max_tokens: 64,
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a tag extraction function. Output only a JSON array of strings. No reasoning.",
+            },
+            { role: "user", content: prompt },
+          ],
+          temperature: 0,
+          max_tokens: 256,
+          reasoning_effort: "low",
         }),
       }
     );

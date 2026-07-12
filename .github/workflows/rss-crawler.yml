@@ -10,6 +10,12 @@ on:
       - main
     paths:
       - "scripts/rss-crawler.js"
+      - "lib/server/**"
+      - "scripts/rss/**"
+      - "scripts/ai-tags.js"
+      - "scripts/discord-webhook.js"
+      - "scripts/push-notification.js"
+      - ".github/workflows/rss-crawler.yml"
 
 # 권한 설정
 permissions:

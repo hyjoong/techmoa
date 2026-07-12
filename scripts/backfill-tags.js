@@ -10,6 +10,8 @@ const REQUEST_DELAY_MS = parseInt(
   process.env.TAG_REQUEST_DELAY_MS || "8000",
   10
 );
+const BACKFILL_LIMIT = parseInt(process.env.TAG_BACKFILL_LIMIT || "0", 10);
+const DRY_RUN = process.env.TAG_BACKFILL_DRY_RUN === "true";
 
 if (!supabaseUrl || !supabaseServiceKey) {
   console.error("❌ Supabase 환경변수가 없습니다.");
@@ -38,6 +40,11 @@ async function backfill() {
   let total = 0;
   let updated = 0;
   let skipped = 0;
+  let attempted = 0;
+
+  console.log(
+    `태그 백필 시작: limit=${BACKFILL_LIMIT || "none"}, dryRun=${DRY_RUN}`
+  );
 
   while (true) {
     const rows = await fetchPage(page);
@@ -53,6 +60,13 @@ async function backfill() {
         continue;
       }
 
+      if (BACKFILL_LIMIT > 0 && attempted >= BACKFILL_LIMIT) {
+        console.log(`⏹️ TAG_BACKFILL_LIMIT=${BACKFILL_LIMIT} 도달`);
+        break;
+      }
+
+      attempted++;
+
       const tags = await generateTagsForArticle({
         title: row.title,
         summary: row.summary,
@@ -61,6 +75,15 @@ async function backfill() {
 
       if (!tags || tags.length === 0) {
         console.log(`⚠️ 태그 생성 실패: ${row.id} ${row.title}`);
+        if (REQUEST_DELAY_MS > 0) {
+          await new Promise((resolve) => setTimeout(resolve, REQUEST_DELAY_MS));
+        }
+        continue;
+      }
+
+      if (DRY_RUN) {
+        updated++;
+        console.log(`🧪 태그 업데이트 예정: ${row.id} → ${tags.join(", ")}`);
         if (REQUEST_DELAY_MS > 0) {
           await new Promise((resolve) => setTimeout(resolve, REQUEST_DELAY_MS));
         }
@@ -85,12 +108,15 @@ async function backfill() {
       }
     }
 
+    if (BACKFILL_LIMIT > 0 && attempted >= BACKFILL_LIMIT) break;
     if (rows.length < PAGE_SIZE) break;
     page++;
   }
 
   console.log(
-    `완료: 총 ${total}개 중 ${updated}개 업데이트, ${skipped}개 스킵`
+    `완료: 총 ${total}개 확인, ${attempted}개 태그 생성 시도, ${updated}개 ${
+      DRY_RUN ? "업데이트 예정" : "업데이트"
+    }, ${skipped}개 스킵`
   );
 }
 

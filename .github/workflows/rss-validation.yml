@@ -4,13 +4,20 @@ on:
   workflow_dispatch: # 수동 실행 가능
   pull_request:
     paths:
+      - "scripts/validate-rss.js"
       - "scripts/rss-crawler.js"
+      - "scripts/rss/**"
+      - "lib/server/**"
       - ".github/workflows/rss-validation.yml"
   push:
     branches:
       - main
     paths:
+      - "scripts/validate-rss.js"
       - "scripts/rss-crawler.js"
+      - "scripts/rss/**"
+      - "lib/server/**"
+      - ".github/workflows/rss-validation.yml"
 
 # 권한 설정 추가
 permissions:
