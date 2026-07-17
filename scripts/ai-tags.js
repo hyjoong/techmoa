@@ -104,6 +104,8 @@ Rules:
 - Use ONLY tags from this allowed list: ${allowed}
 - Respond as a JSON array of strings only. No prose, no markdown.
 - Prefer broader tags if unsure.
+- Developer retrospectives (회고), career reflections, and dev culture posts ARE tech topics: use "career" or "culture".
+- If the article is NOT about software/tech topics (e.g. workout log, travel diary, daily life, personal errands), respond with an empty array [].
 
 Article:
 - Title: ${title}
@@ -160,7 +162,10 @@ async function generateWithFireworks(prompt) {
   }
 }
 
-export async function generateTagsForArticle(article) {
+// 태그와 함께 판정 상태를 반환한다.
+// status가 "ok"이면서 tags가 빈 배열이면 모델이 비기술 글로 판단한 것이고,
+// "unavailable"/"error"는 판정 자체가 불가능했던 경우라 구분해서 다뤄야 한다.
+export async function classifyArticleTags(article) {
   if (!FIREWORKS_API_KEY) {
     if (!warnedMissingKey) {
       console.warn(
@@ -168,7 +173,7 @@ export async function generateTagsForArticle(article) {
       );
       warnedMissingKey = true;
     }
-    return [];
+    return { status: "unavailable", tags: [] };
   }
 
   try {
@@ -183,12 +188,17 @@ export async function generateTagsForArticle(article) {
 
     // 허용 태그만 필터링 후 상위 몇 개만 사용
     const filtered = parsedTags.filter((tag) => ALLOWED_TAGS.includes(tag));
-    const result = mergeAndDedupe(filtered).slice(0, 6);
-    return result;
+    const tags = mergeAndDedupe(filtered).slice(0, 6);
+    return { status: "ok", tags };
   } catch (error) {
     console.error("❌ 태그 생성 중 오류:", error.message);
-    return [];
+    return { status: "error", tags: [] };
   }
+}
+
+export async function generateTagsForArticle(article) {
+  const { tags } = await classifyArticleTags(article);
+  return tags;
 }
 
 // FE/BE/AI 등 기존 feed 카테고리를 태그로 매핑
