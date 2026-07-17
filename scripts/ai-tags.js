@@ -55,6 +55,7 @@ const ALLOWED_TAGS = [
   // Architecture
   "architecture",
   "scalability",
+  "performance",
   "micro frontend",
   "monorepo",
   "module federation",
@@ -66,6 +67,13 @@ const ALLOWED_TAGS = [
   "product",
   "ad",
   "case-study",
+  "security",
+  "testing",
+  "mobile",
+  "android",
+  "ios",
+  "kotlin",
+  "swift",
 ];
 
 const mergeAndDedupe = (tags) => {
@@ -105,7 +113,8 @@ Rules:
 - Respond as a JSON array of strings only. No prose, no markdown.
 - Prefer broader tags if unsure.
 - Developer retrospectives (회고), career reflections, and dev culture posts ARE tech topics: use "career" or "culture".
-- If the article is NOT about software/tech topics (e.g. workout log, travel diary, daily life, personal errands), respond with an empty array [].
+- If the article IS about software/tech, always return at least one tag (pick the closest broader one).
+- Only if the article is NOT about software/tech topics at all (e.g. workout log, travel diary, daily life, personal errands), respond with an empty array [].
 
 Article:
 - Title: ${title}
