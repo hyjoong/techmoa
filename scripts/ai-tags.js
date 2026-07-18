@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import { ALL_FILTER_TAGS } from "../lib/tag-data.js";
 
 dotenv.config();
 
@@ -11,72 +12,10 @@ const RETRY_STATUSES = [429, 500, 502, 503, 504];
 const RETRY_BASE_MS = parseInt(process.env.TAG_RETRY_BASE_MS || "5000", 10); // 기본 5초
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// 태그 후보는 서비스 전체에서 사용하는 굵직한 것들 위주로 제한
-// lib/tag-filters.ts의 TAG_FILTER_OPTIONS와 동기화됨
-const ALLOWED_TAGS = [
-  // Frontend
-  "frontend",
-  "react",
-  "nextjs",
-  "javascript",
-  "typescript",
-  "css",
-  "web",
-  "ui/ux",
-  "design",
-  // Backend
-  "backend",
-  "nodejs",
-  "nestjs",
-  "spring",
-  "java",
-  "python",
-  "go",
-  "api",
-  "database",
-  // AI
-  "ai",
-  "ai-ml",
-  "llm",
-  "genai",
-  "mlops",
-  "nlp",
-  "cv",
-  // DevOps
-  "devops",
-  "kubernetes",
-  "docker",
-  "terraform",
-  "monitoring",
-  "logging",
-  "sre",
-  "cloud",
-  "cicd",
-  // Architecture
-  "architecture",
-  "scalability",
-  "performance",
-  "micro frontend",
-  "monorepo",
-  "module federation",
-  "system design",
-  // Else
-  "career",
-  "culture",
-  "business",
-  "product",
-  "ad",
-  "case-study",
-  "security",
-  "testing",
-  "mobile",
-  "android",
-  "ios",
-  "kotlin",
-  "swift",
-];
+// 태그 후보는 UI 필터 카테고리(lib/tag-data.js)와 동일한 목록에서 파생
+const ALLOWED_TAGS = ALL_FILTER_TAGS;
 
-const mergeAndDedupe = (tags) => {
+export const mergeAndDedupe = (tags) => {
   const normalized = tags
     .filter(Boolean)
     .map((tag) => tag.toString().toLowerCase().trim())
@@ -172,8 +111,8 @@ async function generateWithFireworks(prompt) {
 }
 
 // 태그와 함께 판정 상태를 반환한다.
-// status가 "ok"이면서 tags가 빈 배열이면 모델이 비기술 글로 판단한 것이고,
-// "unavailable"/"error"는 판정 자체가 불가능했던 경우라 구분해서 다뤄야 한다.
+// nonTech는 status "ok"에서 모델이 비기술 글로 판단(원본 응답 빈 배열)했을 때만 true.
+// "unavailable"/"error"는 판정 자체가 불가능했던 경우라 nonTech를 세우지 않는다.
 export async function classifyArticleTags(article) {
   if (!FIREWORKS_API_KEY) {
     if (!warnedMissingKey) {
@@ -182,7 +121,7 @@ export async function classifyArticleTags(article) {
       );
       warnedMissingKey = true;
     }
-    return { status: "unavailable", tags: [] };
+    return { status: "unavailable", tags: [], nonTech: false };
   }
 
   try {
@@ -198,10 +137,13 @@ export async function classifyArticleTags(article) {
     // 허용 태그만 필터링 후 상위 몇 개만 사용
     const filtered = parsedTags.filter((tag) => ALLOWED_TAGS.includes(tag));
     const tags = mergeAndDedupe(filtered).slice(0, 6);
-    return { status: "ok", tags };
+
+    // nonTech는 모델의 원본 응답 자체가 빈 배열일 때만 true.
+    // 허용 목록 밖 태그를 골라 사후 필터링으로 비워진 경우는 기술 글로 취급해야 한다.
+    return { status: "ok", tags, nonTech: parsedTags.length === 0 };
   } catch (error) {
     console.error("❌ 태그 생성 중 오류:", error.message);
-    return { status: "error", tags: [] };
+    return { status: "error", tags: [], nonTech: false };
   }
 }
 
