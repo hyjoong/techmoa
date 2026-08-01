@@ -94,13 +94,23 @@ export function BookmarkButton({
     }
   };
 
+  const bookmarkLabel = loading
+    ? "북마크 처리 중"
+    : isBookmarked
+      ? "북마크 해제"
+      : "북마크 추가";
+
   return (
     <Button
+      type="button"
       variant="ghost"
       size="sm"
       onClick={handleBookmarkClick}
       disabled={loading}
-      className={`p-2 h-auto ${
+      aria-label={bookmarkLabel}
+      aria-pressed={isBookmarked}
+      aria-busy={loading}
+      className={`p-2 h-auto bg-background/80 shadow-sm backdrop-blur-sm hover:bg-background ${
         isBookmarked
           ? "text-yellow-500 hover:text-yellow-600"
           : "text-slate-400 hover:text-slate-600"
