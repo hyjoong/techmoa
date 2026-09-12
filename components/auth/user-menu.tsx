@@ -65,7 +65,6 @@ export function UserMenu({ onLoginClick }: UserMenuProps) {
       <Button
         variant="ghost"
         size="sm"
-        aria-label="로그인"
         onClick={onLoginClick}
         className="p-2 h-auto"
       >
@@ -77,11 +76,7 @@ export function UserMenu({ onLoginClick }: UserMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          className="relative h-8 w-8 rounded-full"
-          aria-label="계정 메뉴"
-        >
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
             <AvatarImage
               src={profile?.avatar_url || user?.user_metadata?.avatar_url}

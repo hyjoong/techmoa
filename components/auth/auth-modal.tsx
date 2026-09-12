@@ -6,7 +6,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,14 +57,14 @@ export function AuthModal({
         variant: "destructive",
       });
       return;
-    }
+  }
 
     setLoading(true);
     try {
       const authFunction = isSignUp ? signUp : signIn;
       const { user, error } = await authFunction(
         formData.email,
-        formData.password,
+        formData.password
       );
 
       if (error) {
@@ -132,9 +131,6 @@ export function AuthModal({
           <DialogTitle className="text-center text-xl font-bold">
             Techmoa에 오신 것을 환영합니다
           </DialogTitle>
-          <DialogDescription className="sr-only">
-            로그인하거나 회원가입하여 관심 있는 글을 북마크하세요.
-          </DialogDescription>
         </DialogHeader>
 
         <Tabs
@@ -182,9 +178,6 @@ export function AuthModal({
                     variant="ghost"
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    aria-label={
-                      showPassword ? "비밀번호 숨기기" : "비밀번호 표시"
-                    }
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
@@ -293,9 +286,6 @@ export function AuthModal({
                     variant="ghost"
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    aria-label={
-                      showPassword ? "비밀번호 숨기기" : "비밀번호 표시"
-                    }
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (

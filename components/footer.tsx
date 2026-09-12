@@ -39,7 +39,7 @@ export function Footer() {
 
         <div className="mt-6 pt-6 border-t border-slate-200/50 dark:border-slate-700/50 text-center">
           <p className="text-xs text-slate-500 dark:text-slate-500">
-            © {new Date().getFullYear()} Techmoa. All rights reserved.
+            © 2025 Techmoa. All rights reserved.
           </p>
         </div>
       </div>

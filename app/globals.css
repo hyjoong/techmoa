@@ -3,13 +3,8 @@
 @tailwind utilities;
 
 body {
-  font-family:
-    "Pretendard",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
-    sans-serif;
+  font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, sans-serif;
 }
 
 @layer utilities {
@@ -184,15 +179,15 @@ body {
 
 /* Card hover effects */
 .card-hover {
-  @apply transition-shadow duration-200 ease-out;
+  @apply transition-all duration-300 ease-out;
 }
 
 .card-hover:hover {
-  @apply shadow-md;
+  @apply shadow-xl shadow-primary/10 -translate-y-2;
 }
 
 .dark .card-hover:hover {
-  @apply shadow-md;
+  @apply shadow-xl shadow-primary/20 -translate-y-2;
   background-color: hsl(217 33% 20%);
 }
 
@@ -223,15 +218,4 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-primary/40;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
 }

@@ -7,6 +7,7 @@ import Image from "next/image";
 import { incrementViews, type Blog } from "@/lib/supabase";
 import { getLogoUrl } from "@/lib/logos";
 import { memo, useCallback, useState } from "react";
+import { isFlutterWebView } from "@/lib/webview-bridge";
 import { formatBlogDate, formatViews } from "@/lib/format";
 
 interface BlogListItemProps {
@@ -46,12 +47,12 @@ function BlogListItemComponent({
         onClick={handleLinkClick}
         className="block"
       >
-        <Card className="cursor-pointer card-hover border border-border shadow-sm hover:shadow-md bg-card rounded-lg overflow-hidden">
-          <CardContent className="p-4 sm:p-5">
-            <div className="flex gap-4 overflow-hidden">
+        <Card className="cursor-pointer card-hover border border-border/20 shadow-sm hover:shadow-md bg-card dark:bg-card/80 backdrop-blur-sm dark:backdrop-blur-none rounded-lg overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex gap-6 overflow-hidden">
               {/* 썸네일 영역: 모바일에서는 숨김 */}
               {shouldShowThumbnail && (
-                <div className="hidden sm:block relative w-36 h-24 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
+                <div className="hidden sm:block relative w-48 h-32 flex-shrink-0 overflow-hidden rounded-lg bg-muted">
                   {!imageLoaded && (
                     <div className="absolute inset-0 bg-gradient-to-br from-muted to-muted/50 animate-pulse" />
                   )}
@@ -59,7 +60,7 @@ function BlogListItemComponent({
                     src={blog.thumbnail_url!}
                     alt={blog.title}
                     fill
-                    sizes="144px"
+                    sizes="192px"
                     className={`object-cover group-hover:scale-105 transition-all duration-300 ${
                       imageLoaded ? "opacity-100" : "opacity-0"
                     }`}
@@ -74,11 +75,11 @@ function BlogListItemComponent({
 
               {/* 콘텐츠 영역 */}
               <div className="flex-1 min-w-0 overflow-hidden">
-                <h3 className="font-semibold text-base sm:text-lg mb-2 pr-8 group-hover:text-primary transition-colors duration-200 line-clamp-2 break-words">
+                <h3 className="font-semibold text-xl mb-3 group-hover:text-primary transition-colors duration-200 line-clamp-2 break-all overflow-wrap-anywhere hyphens-auto">
                   {blog.title}
                 </h3>
 
-                <p className="text-muted-foreground text-sm mb-3 line-clamp-2 leading-relaxed break-words">
+                <p className="text-muted-foreground text-base mb-4 line-clamp-2 leading-relaxed break-all overflow-wrap-anywhere hyphens-auto">
                   {blog.summary || "요약이 없습니다."}
                 </p>
 
@@ -141,7 +142,13 @@ function BlogListItemComponent({
       </a>
 
       {/* 북마크 버튼 */}
-      <div className="absolute top-3 right-3 z-10">
+      <div
+        className={`absolute top-3 right-3 transition-opacity duration-200 ${
+          isFlutterWebView()
+            ? "opacity-100"
+            : "opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100"
+        }`}
+      >
         <BookmarkButton
           blogId={blog.id}
           onLoginClick={onLoginClick}

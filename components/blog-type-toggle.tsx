@@ -10,11 +10,7 @@ export function BlogTypeToggle({
   onBlogTypeChange,
 }: BlogTypeToggleProps) {
   return (
-    <div
-      role="group"
-      aria-label="블로그 종류"
-      className="relative shrink-0 bg-muted/50 border border-border/50 rounded-xl p-1 h-10"
-    >
+    <div className="relative bg-muted/50 border border-border/50 rounded-xl p-1 h-10">
       {/* 슬라이더 배경 */}
       <div
         className={`absolute top-1 bottom-1 rounded-lg bg-background border border-border/50 shadow-sm transition-all duration-300 ease-out ${
@@ -27,7 +23,6 @@ export function BlogTypeToggle({
       {/* 버튼들 */}
       <div className="relative flex h-full">
         <button
-          aria-pressed={blogType === "company"}
           onClick={() => onBlogTypeChange("company")}
           className={`relative flex items-center justify-center px-3 py-2 rounded-lg transition-all duration-300 font-medium z-10 whitespace-nowrap text-sm ${
             blogType === "company" ? "text-primary" : "text-muted-foreground"
@@ -36,7 +31,6 @@ export function BlogTypeToggle({
           기업
         </button>
         <button
-          aria-pressed={blogType === "personal"}
           onClick={() => onBlogTypeChange("personal")}
           className={`relative flex items-center justify-center px-3 py-2 rounded-lg transition-all duration-300 font-medium z-10 whitespace-nowrap text-sm ${
             blogType === "personal" ? "text-primary" : "text-muted-foreground"

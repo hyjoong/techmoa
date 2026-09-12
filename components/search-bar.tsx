@@ -23,7 +23,7 @@ export function SearchBar({
   }, [value]);
 
   const handleSearch = () => {
-    onChange(inputValue.trim());
+    onChange(inputValue);
   };
 
   const clearSearch = () => {
@@ -31,32 +31,28 @@ export function SearchBar({
     onChange("");
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
+
   return (
-    <form
-      role="search"
-      className="relative flex items-center gap-2"
-      onSubmit={(event) => {
-        event.preventDefault();
-        handleSearch();
-      }}
-    >
-      <div className="relative min-w-0 flex-1">
+    <div className="relative flex items-center gap-2">
+      <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
         <Input
-          type="search"
-          aria-label={placeholder}
-          enterKeyHint="search"
+          type="text"
           placeholder={placeholder}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
-          className="pl-10 pr-10 h-12 [&::-webkit-search-cancel-button]:appearance-none"
+          onKeyPress={handleKeyPress}
+          className="pl-10 pr-10 h-12"
         />
         {inputValue && (
           <Button
             variant="ghost"
             size="sm"
-            type="button"
-            aria-label="검색어 지우기"
             onClick={clearSearch}
             className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 hover:bg-muted"
           >
@@ -65,12 +61,12 @@ export function SearchBar({
         )}
       </div>
       <Button
-        type="submit"
-        className="px-4 h-12 shrink-0"
+        onClick={handleSearch}
+        className="px-4 h-12 hidden sm:block"
         disabled={!(inputValue?.trim() || "")}
       >
         검색
       </Button>
-    </form>
+    </div>
   );
 }

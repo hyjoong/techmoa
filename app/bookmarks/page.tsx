@@ -2,196 +2,267 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 import { getBookmarkedBlogs, type BookmarkedBlog } from "@/lib/bookmarks";
 import { BlogCard } from "@/components/blog-card";
 import { BlogListItem } from "@/components/blog-list-item";
 import { BookmarkSkeleton } from "@/components/bookmark-skeleton";
 import { SearchBar } from "@/components/search-bar";
-import { ViewToggle } from "@/components/view-toggle";
-import { Header } from "@/components/header";
-import { Footer } from "@/components/footer";
-import { openAuthModal } from "@/components/auth/open-auth-modal";
-import { Bookmark, Search, AlertCircle } from "lucide-react";
+import { Bookmark, BookOpen, Grid3X3, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Card, CardContent } from "@/components/ui/card";
 
 export default function BookmarksPage() {
-  const { user, loading: authLoading } = useAuth();
-  const userId = user?.id;
-  const [result, setResult] = useState<{
-    userId: string;
-    blogs: BookmarkedBlog[];
-  } | null>(null);
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { toast } = useToast();
+  const [bookmarkedBlogs, setBookmarkedBlogs] = useState<BookmarkedBlog[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const [viewMode, setViewMode] = useState<"gallery" | "list">("gallery");
+  const [viewMode, setViewMode] = useState<"card" | "list">("card");
   const [searchQuery, setSearchQuery] = useState("");
-  const handleLoginClick = (): void => {
-    openAuthModal();
+
+  // 북마크된 블로그 가져오기
+  const fetchBookmarkedBlogs = async () => {
+    try {
+      const { blogs, error } = await getBookmarkedBlogs();
+      if (error) throw error;
+      setBookmarkedBlogs(blogs || []);
+    } catch (error: any) {
+      console.error("북마크된 블로그 가져오기 실패:", error);
+      toast({
+        title: "오류",
+        description: "북마크된 글을 가져오는데 실패했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 북마크 제거 시 목록에서 제거
+  const handleBookmarkRemoved = (blogId: number) => {
+    setBookmarkedBlogs((prev) => prev.filter((blog) => blog.id !== blogId));
   };
 
   useEffect(() => {
-    let active = true;
-    setResult(null);
-    setError(null);
-    if (!userId) {
-      setLoading(false);
+    // 인증 상태가 로딩 중이면 스켈레톤 표시
+    if (authLoading) {
+      setLoading(true);
       return;
     }
-    setLoading(true);
-    void getBookmarkedBlogs()
-      .then(({ blogs, error: fetchError }) => {
-        if (!active) return;
-        if (fetchError) throw new Error(fetchError.message);
-        setResult({ userId, blogs });
-      })
-      .catch(() => {
-        if (active) setError("북마크한 글을 불러오지 못했습니다.");
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [userId, retryCount]);
 
-  const blogs = result && result.userId === userId ? result.blogs : [];
-  const filteredBlogs = blogs.filter((blog) =>
-    [blog.title, blog.summary, blog.author].some((value) =>
-      value?.toLowerCase().includes(searchQuery.toLowerCase()),
-    ),
-  );
-  const handleBookmarkRemoved = (id: number): void => {
-    setResult((previous) =>
-      previous
-        ? {
-            ...previous,
-            blogs: previous.blogs.filter((blog) => blog.id !== id),
-          }
-        : null,
+    if (isAuthenticated) {
+      setLoading(true);
+      fetchBookmarkedBlogs();
+    } else {
+      setLoading(false);
+    }
+  }, [isAuthenticated, authLoading]);
+
+  // 필터링된 블로그 목록 (검색만)
+  const filteredBlogs = bookmarkedBlogs.filter((blog) => {
+    const matchesSearch =
+      blog.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      blog.summary?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      blog.author?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesSearch;
+  });
+
+  // 최신순으로 정렬
+  const sortedBlogs = [...filteredBlogs].sort((a, b) => {
+    return (
+      new Date(b.published_at || b.created_at).getTime() -
+      new Date(a.published_at || a.created_at).getTime()
     );
-  };
+  });
+
+  // 인증 상태가 로딩 중이면 스켈레톤 표시
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <div className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-900/60 border-b border-slate-200/50 dark:border-slate-700/50">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <button className="hover:opacity-80 transition-opacity">
+                  <a href="/">
+                    <h1 className="text-2xl font-black text-blue-600 dark:text-blue-400">
+                      Techmoa
+                    </h1>
+                  </a>
+                </button>
+                <div className="flex items-center gap-2">
+                  <Bookmark className="h-5 w-5 text-yellow-500" />
+                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                    북마크
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="container mx-auto px-4 py-6">
+          <BookmarkSkeleton viewMode={viewMode} count={6} />
+        </div>
+      </div>
+    );
+  }
+
+  // 로그인하지 않은 경우
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <div className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-900/60 border-b border-slate-200/50 dark:border-slate-700/50">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex items-center gap-3">
+              <button className="hover:opacity-80 transition-opacity">
+                <a href="/">
+                  <h1 className="text-2xl font-black text-blue-600 dark:text-blue-400">
+                    Techmoa
+                  </h1>
+                </a>
+              </button>
+              <div className="flex items-center gap-2">
+                <Bookmark className="h-5 w-5 text-yellow-500" />
+                <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                  북마크
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="container mx-auto px-4 py-8">
+          <Card className="max-w-md mx-auto">
+            <CardContent className="p-8 text-center">
+              <BookOpen className="h-16 w-16 mx-auto mb-4 text-slate-400" />
+              <h2 className="text-2xl font-bold mb-2">북마크</h2>
+              <p className="text-slate-600 mb-6">
+                로그인하여 북마크한 글들을 확인하세요.
+              </p>
+              <Button asChild>
+                <a href="/">홈으로 돌아가기</a>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <Header onLoginClick={handleLoginClick} />
-      <main className="container mx-auto flex-1 px-4 py-8">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-          저장한 기술 이야기
-        </h1>
-        <p className="mb-6 mt-2 text-sm text-muted-foreground">
-          다시 읽고 싶은 글을 모아두세요. 최근 저장한 순서로 보여드려요.
-        </p>
-        {authLoading ? (
-          <BookmarkSkeleton
-            viewMode={viewMode === "gallery" ? "card" : "list"}
-            count={6}
-          />
-        ) : !userId ? (
-          <div className="mx-auto max-w-md rounded-xl border border-border bg-card px-6 py-12 text-center">
-            <Bookmark className="mx-auto mb-4 h-10 w-10 text-primary" />
-            <h2 className="text-xl font-semibold">
-              읽고 싶은 글을 저장해보세요
-            </h2>
-            <p className="mb-6 mt-2 text-sm text-muted-foreground">
-              로그인하면 북마크한 글을 언제든 다시 볼 수 있어요.
-            </p>
-            <Button onClick={handleLoginClick}>로그인하기</Button>
-            <Button asChild variant="ghost" className="ml-2">
-              <Link href="/">글 둘러보기</Link>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* 헤더 */}
+      <div className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-900/60 border-b border-slate-200/50 dark:border-slate-700/50">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <button className="hover:opacity-80 transition-opacity">
+                <a href="/">
+                  <h1 className="text-2xl font-black text-blue-600 dark:text-blue-400">
+                    Techmoa
+                  </h1>
+                </a>
+              </button>
+              <div className="flex items-center gap-2">
+                <Bookmark className="h-5 w-5 text-yellow-500" />
+                <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                  북마크
+                </span>
+              </div>
+            </div>
+            <div className="text-sm text-slate-600 dark:text-slate-400">
+              총 {sortedBlogs.length}개
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-6">
+        {/* 컨트롤 바 */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="flex-1">
+            <SearchBar
+              value={searchQuery || ""}
+              onChange={setSearchQuery}
+              placeholder="북마크한 글 검색..."
+            />
+          </div>
+          <div className="flex items-center gap-2 p-1 bg-muted rounded-lg">
+            <Button
+              variant={viewMode === "card" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("card")}
+              className="flex items-center gap-2"
+            >
+              <Grid3X3 className="h-4 w-4" />
+              <span className="hidden sm:inline">갤러리</span>
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setViewMode("list")}
+              className="flex items-center gap-2"
+            >
+              <List className="h-4 w-4" />
+              <span className="hidden sm:inline">목록</span>
             </Button>
           </div>
-        ) : (
-          <>
-            <div className="mb-4 rounded-xl border border-border bg-card p-4">
-              <SearchBar
-                value={searchQuery}
-                onChange={setSearchQuery}
-                placeholder="북마크한 글 검색"
-              />
-            </div>
-            <div className="mb-5 flex items-center justify-between gap-3">
-              <p className="text-sm text-muted-foreground" role="status">
-                총 {filteredBlogs.length}개의 글
-              </p>
-              <ViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
-            </div>
-            {loading ? (
-              <BookmarkSkeleton
-                viewMode={viewMode === "gallery" ? "card" : "list"}
-                count={6}
-              />
-            ) : error ? (
-              <div role="alert" className="py-12 text-center">
-                <AlertCircle className="mx-auto mb-4 h-8 w-8 text-muted-foreground" />
-                <p className="mb-4">{error}</p>
-                <Button
-                  variant="outline"
-                  onClick={() => setRetryCount((value) => value + 1)}
-                >
-                  다시 시도
-                </Button>
-              </div>
-            ) : filteredBlogs.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border py-12 text-center">
-                {searchQuery ? (
-                  <Search className="mx-auto mb-4 h-8 w-8 text-muted-foreground" />
-                ) : (
-                  <Bookmark className="mx-auto mb-4 h-8 w-8 text-muted-foreground" />
-                )}
-                <h2 className="text-lg font-semibold">
-                  {searchQuery
-                    ? "검색 결과가 없습니다"
-                    : "아직 저장한 글이 없습니다"}
-                </h2>
-                <p className="mb-5 mt-2 text-sm text-muted-foreground">
-                  {searchQuery
-                    ? "다른 검색어로 찾아보세요."
-                    : "관심 있는 글의 북마크 버튼을 눌러보세요."}
-                </p>
-                {searchQuery ? (
-                  <Button variant="outline" onClick={() => setSearchQuery("")}>
-                    검색 초기화
-                  </Button>
-                ) : (
-                  <Button asChild>
-                    <Link href="/">글 둘러보기</Link>
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div
-                className={
-                  viewMode === "gallery"
-                    ? "grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3"
-                    : "space-y-3"
-                }
-              >
-                {filteredBlogs.map((blog) =>
-                  viewMode === "gallery" ? (
-                    <BlogCard
-                      key={blog.id}
-                      blog={blog}
-                      onLoginClick={handleLoginClick}
-                      onBookmarkRemoved={() => handleBookmarkRemoved(blog.id)}
-                    />
-                  ) : (
-                    <BlogListItem
-                      key={blog.id}
-                      blog={blog}
-                      onLoginClick={handleLoginClick}
-                      onBookmarkRemoved={() => handleBookmarkRemoved(blog.id)}
-                    />
-                  ),
-                )}
-              </div>
-            )}
-          </>
+        </div>
+
+        {/* 로딩 상태 */}
+        {loading && (
+          <div>
+            <BookmarkSkeleton viewMode={viewMode} count={6} />
+          </div>
         )}
-      </main>
-      <Footer />
+
+        {/* 북마크된 글 목록 */}
+        {!loading && sortedBlogs.length === 0 && (
+          <Card className="text-center py-12">
+            <CardContent>
+              <Bookmark className="h-16 w-16 mx-auto mb-4 text-slate-300" />
+              <h3 className="text-xl font-semibold mb-2">
+                북마크된 글이 없습니다
+              </h3>
+              <p className="text-slate-600 mb-4">
+                관심 있는 글에 북마크를 추가해보세요.
+              </p>
+              <Button asChild>
+                <a href="/">홈으로 돌아가기</a>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* 북마크된 글들 */}
+        {!loading && sortedBlogs.length > 0 && (
+          <div
+            className={
+              viewMode === "card"
+                ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                : "space-y-4"
+            }
+          >
+            {sortedBlogs.map((blog) =>
+              viewMode === "card" ? (
+                <BlogCard
+                  key={blog.id}
+                  blog={blog}
+                  onLoginClick={() => {}} // 북마크 페이지에서는 로그인 모달이 필요 없음
+                  onBookmarkRemoved={() => handleBookmarkRemoved(blog.id)}
+                />
+              ) : (
+                <BlogListItem
+                  key={blog.id}
+                  blog={blog}
+                  onLoginClick={() => {}} // 북마크 페이지에서는 로그인 모달이 필요 없음
+                  onBookmarkRemoved={() => handleBookmarkRemoved(blog.id)}
+                />
+              )
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
