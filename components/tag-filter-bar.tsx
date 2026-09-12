@@ -31,7 +31,7 @@ export function TagFilterBar({
   };
 
   return (
-    <div className="flex flex-col gap-3 pb-2 px-2 sm:px-0 w-full">
+    <div className="flex flex-col gap-3  w-full">
       {/* 메인 태그 */}
       <div className="flex flex-wrap items-center gap-2">
         {TAG_FILTER_OPTIONS.map((option) => {
@@ -42,6 +42,7 @@ export function TagFilterBar({
               variant={isActive ? "default" : "outline"}
               size="sm"
               className="rounded-full px-4 whitespace-nowrap border-slate-300 dark:border-white/25"
+              aria-pressed={isActive}
               onClick={() => onChange(option.id)}
             >
               {option.label}
@@ -60,11 +61,12 @@ export function TagFilterBar({
                 key={subTag}
                 variant={isSelected ? "default" : "outline"}
                 size="sm"
-                className={`rounded-full px-3 py-0 h-7 text-xs whitespace-nowrap transition-colors ${
+                className={`rounded-full px-3 py-1 min-h-8 text-xs whitespace-nowrap transition-colors ${
                   isSelected
                     ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
                     : "border border-slate-300 dark:border-white/25 text-muted-foreground hover:text-foreground"
                 }`}
+                aria-pressed={isSelected}
                 onClick={() => handleSubTagClick(subTag)}
               >
                 {subTag}

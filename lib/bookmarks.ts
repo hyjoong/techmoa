@@ -22,7 +22,6 @@ export interface BookmarkedBlog extends Blog {
   bookmark_created_at: string;
 }
 
-
 // 에러 타입 정의
 export interface BookmarkError {
   message: string;
@@ -134,7 +133,7 @@ export async function addBookmark(blogId: number): Promise<BookmarkResponse> {
 
 // 북마크 제거
 export async function removeBookmark(
-  blogId: number
+  blogId: number,
 ): Promise<{ error: BookmarkError | null }> {
   // Flutter 웹뷰 환경: 앱으로 메시지 전송
   if (isFlutterWebView()) {
@@ -208,16 +207,24 @@ export async function getUserBookmarks(): Promise<BookmarkListResponse> {
     };
   }
 
-  const { data, error } = await supabase
-    .from("bookmarks")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
-
-  return {
-    bookmarks: data || [],
-    error: error ? { message: error.message, code: error.code } : null,
-  };
+  const bookmarks: Bookmark[] = [];
+  const pageSize = 1000;
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase
+      .from("bookmarks")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("id")
+      .range(offset, offset + pageSize - 1);
+    if (error)
+      return {
+        bookmarks: [],
+        error: { message: error.message, code: error.code },
+      };
+    bookmarks.push(...(data || []));
+    if (!data || data.length < pageSize) break;
+  }
+  return { bookmarks, error: null };
 }
 
 // 북마크된 블로그 목록 가져오기 (블로그 정보 포함)
@@ -240,7 +247,7 @@ export async function getBookmarkedBlogs(): Promise<BookmarkedBlogsResponse> {
       id,
       created_at,
       blogs (*)
-    `
+    `,
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });

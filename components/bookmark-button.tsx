@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { useBookmarks } from "@/components/bookmark-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Bookmark } from "lucide-react";
@@ -25,25 +26,31 @@ export function BookmarkButton({
 }: BookmarkButtonProps) {
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
-  const [isBookmarked, setIsBookmarked] = useState(false);
+  const bookmarks = useBookmarks();
+  const [appBookmarked, setAppBookmarked] = useState(false);
+  const isApp = isFlutterWebView();
+  const isBookmarked = isApp ? appBookmarked : bookmarks.ids.has(blogId);
+  const setIsBookmarked = (value: boolean): void => {
+    if (isApp) setAppBookmarked(value);
+    else bookmarks.setBookmarked(blogId, value);
+  };
   const [loading, setLoading] = useState(false);
 
-  // 북마크 상태 확인
+  // 앱은 기존 브리지를 사용하고 웹은 공유된 북마크 목록을 사용한다.
   useEffect(() => {
-    // 웹뷰 환경이거나 로그인된 경우 북마크 상태 확인
-    if (isFlutterWebView() || isAuthenticated) {
-      checkBookmarkStatus();
-    }
-  }, [isAuthenticated, blogId]);
-
-  const checkBookmarkStatus = async () => {
-    try {
-      const bookmarked = await checkIsBookmarked(blogId);
-      setIsBookmarked(bookmarked);
-    } catch (error) {
-      console.error("북마크 상태 확인 실패:", error);
-    }
-  };
+    let active = true;
+    if (isApp)
+      void checkIsBookmarked(blogId)
+        .then((value) => {
+          if (active) setAppBookmarked(value);
+        })
+        .catch(() => {
+          if (active) setAppBookmarked(false);
+        });
+    return () => {
+      active = false;
+    };
+  }, [isApp, blogId]);
 
   const handleBookmarkClick = async () => {
     // 웹뷰가 아닌 환경에서 로그인 체크
@@ -57,6 +64,14 @@ export function BookmarkButton({
       return;
     }
 
+    if (!isApp && bookmarks.error) {
+      bookmarks.retry();
+      toast({
+        title: "북마크 확인",
+        description: "저장 상태를 다시 확인합니다. 잠시 후 눌러주세요.",
+      });
+      return;
+    }
     setLoading(true);
     try {
       if (isBookmarked) {
@@ -82,11 +97,14 @@ export function BookmarkButton({
           description: "북마크에 추가되었습니다.",
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("북마크 처리 실패:", error);
       toast({
         title: "오류",
-        description: error.message || "북마크 처리에 실패했습니다.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "북마크 처리에 실패했습니다.",
         variant: "destructive",
       });
     } finally {
@@ -106,7 +124,7 @@ export function BookmarkButton({
       variant="ghost"
       size="sm"
       onClick={handleBookmarkClick}
-      disabled={loading}
+      disabled={loading || (!isApp && bookmarks.loading)}
       aria-label={bookmarkLabel}
       aria-pressed={isBookmarked}
       aria-busy={loading}

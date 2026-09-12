@@ -84,6 +84,14 @@ cp .env.example .env.local
 pnpm dev
 ```
 
+### UI 변경 검증
+
+```bash
+pnpm test:ui                          # 필터 요청 순서·재시도·인증/북마크 공유 상태 회귀 테스트
+pnpm exec tsc --noEmit --incremental false
+pnpm build
+```
+
 ### 4. RSS 크롤링 실행
 
 ```bash

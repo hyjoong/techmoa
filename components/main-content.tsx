@@ -1,203 +1,253 @@
+import type { ReactNode } from "react";
+import { AlertCircle, RotateCcw, Search } from "lucide-react";
 import { BlogCard } from "@/components/blog-card";
 import { BlogListItem } from "@/components/blog-list-item";
 import { InfiniteScrollTrigger } from "@/components/infinite-scroll-trigger";
 import { ViewToggle } from "@/components/view-toggle";
+import { SearchBar } from "@/components/search-bar";
+import { BlogTypeToggle } from "@/components/blog-type-toggle";
+import { BlogSelector } from "@/components/blog-selector";
 import { Button } from "@/components/ui/button";
 import { TagFilterBar } from "@/components/tag-filter-bar";
-import {
-  TAG_FILTER_OPTIONS,
-  type TagCategory,
-} from "@/lib/tag-filters";
+import { TAG_FILTER_OPTIONS } from "@/lib/tag-filters";
 import type { Blog } from "@/lib/supabase";
-import { ChevronLeft } from "lucide-react";
-import { useCallback } from "react";
+import type { UrlFilters, UrlFiltersActions } from "@/hooks/use-url-filters";
+import type { InfiniteBlogDataState } from "@/hooks/use-infinite-blog-data";
 
 interface MainContentProps {
-  blogs: Blog[];
-  loading: boolean;
-  loadingMore?: boolean;
-  hasMore?: boolean;
-  totalCount: number;
-  viewMode: "gallery" | "list";
-  searchQuery: string;
-  tagCategory: TagCategory;
-  selectedSubTags: string[];
+  data: InfiniteBlogDataState;
+  filters: UrlFilters & UrlFiltersActions;
+  popularContent: ReactNode;
   isWeeklyExpanded: boolean;
-  onLoadMore?: () => void;
-  onViewModeChange: (mode: "gallery" | "list") => void;
-  onSearchChange: (query: string) => void;
-  onTagCategoryChange: (category: TagCategory) => void;
-  onSubTagChange: (subTags: string[]) => void;
   onWeeklyToggle: () => void;
   onLoginClick: () => void;
 }
 
 export function MainContent({
-  blogs,
-  loading,
-  loadingMore,
-  hasMore,
-  totalCount,
-  viewMode,
-  searchQuery,
-  tagCategory,
-  selectedSubTags,
+  data,
+  filters,
+  popularContent,
   isWeeklyExpanded,
-  onLoadMore,
-  onViewModeChange,
-  onSearchChange,
-  onTagCategoryChange,
-  onSubTagChange,
   onWeeklyToggle,
   onLoginClick,
 }: MainContentProps) {
-  // 태그 클릭 시 필터에 추가
-  const handleTagClick = useCallback(
-    (tag: string) => {
-      // 클릭한 태그가 속한 카테고리 찾기
-      const matchedCategory = TAG_FILTER_OPTIONS.find((option) =>
-        option.tags.includes(tag)
-      );
-
-      // 이미 선택된 태그면 제거
-      if (selectedSubTags.includes(tag)) {
-        onSubTagChange(selectedSubTags.filter((t) => t !== tag));
-      } else {
-        // 태그 추가하고, 해당 카테고리로 전환
-        if (matchedCategory && tagCategory !== matchedCategory.id) {
-          onTagCategoryChange(matchedCategory.id);
-        }
-        onSubTagChange([...selectedSubTags, tag]);
-      }
-
-      // 상단으로 스크롤
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    },
-    [selectedSubTags, tagCategory, onSubTagChange, onTagCategoryChange]
-  );
+  const {
+    blogs,
+    loading,
+    loadingMore,
+    hasMore,
+    totalCount,
+    error,
+    loadMoreError,
+    loadMore,
+    retry,
+  } = data;
+  const {
+    blogType,
+    selectedBlog,
+    viewMode,
+    searchQuery,
+    tagCategory,
+    selectedSubTags,
+  } = filters;
+  const gridClassName = `grid grid-cols-1 md:grid-cols-2 ${isWeeklyExpanded ? "xl:grid-cols-2" : "xl:grid-cols-3"} gap-5`;
+  const categoryLabel = TAG_FILTER_OPTIONS.find(
+    (option) => option.id === tagCategory,
+  )?.label;
+  const handleTagClick = (tag: string): void => {
+    filters.handleTagClick(tag);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const renderBlog = (blog: Blog): ReactNode =>
+    viewMode === "gallery" ? (
+      <BlogCard
+        key={blog.id}
+        blog={blog}
+        onLoginClick={onLoginClick}
+        selectedSubTags={selectedSubTags}
+        onTagClick={handleTagClick}
+      />
+    ) : (
+      <BlogListItem key={blog.id} blog={blog} onLoginClick={onLoginClick} />
+    );
 
   return (
-    <main className="flex-1 pt-4">
-      <div className="mb-4 flex items-center gap-4">
-        <ViewToggle
-          viewMode={viewMode}
-          onViewModeChange={onViewModeChange}
-          searchQuery={searchQuery}
-          onSearchChange={onSearchChange}
-        />
-        {!isWeeklyExpanded && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onWeeklyToggle}
-            className="hidden xl:flex items-center gap-2 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            주간 인기글 보기
-          </Button>
-        )}
+    <main id="main-content" className="min-w-0 flex-1">
+      <div className="mb-4">
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+          오늘 읽을 기술 이야기
+        </h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          기업과 개발자의 새로운 글을 한곳에서 만나보세요.
+        </p>
       </div>
-
-      <div className="mb-6 w-full overflow-hidden">
-        <TagFilterBar
-          value={tagCategory}
-          selectedSubTags={selectedSubTags}
-          onChange={onTagCategoryChange}
-          onSubTagChange={onSubTagChange}
+      <section
+        aria-label="글 검색과 필터"
+        className="mb-5 space-y-3 rounded-xl border border-border bg-card p-4"
+      >
+        <SearchBar
+          value={searchQuery}
+          onChange={filters.handleSearchChange}
+          placeholder="제목이나 작성자로 검색"
         />
-      </div>
-
-      {loading ? (
-        <>
-          {/* 로딩 스켈레톤 */}
-          {viewMode === "gallery" ? (
-            <div
-              className={`grid grid-cols-1 md:grid-cols-2 ${
-                isWeeklyExpanded ? "xl:grid-cols-2" : "xl:grid-cols-3"
-              } gap-8`}
+        <div className="flex flex-wrap items-center gap-3">
+          <BlogTypeToggle
+            blogType={blogType}
+            onBlogTypeChange={filters.handleBlogTypeChange}
+          />
+          <div className="min-w-0 flex-1 sm:flex-none">
+            <BlogSelector
+              selectedBlog={selectedBlog}
+              onBlogChange={filters.handleBlogChange}
+              blogType={blogType}
+            />
+          </div>
+        </div>
+        <div className="pt-1">
+          <TagFilterBar
+            value={tagCategory}
+            selectedSubTags={selectedSubTags}
+            onChange={filters.handleTagCategoryChange}
+            onSubTagChange={filters.handleSubTagChange}
+          />
+        </div>
+        {filters.hasActiveFilters && (
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+            <p className="min-w-0 break-words text-xs leading-relaxed text-muted-foreground">
+              현재 조건:{" "}
+              {[
+                blogType === "company" ? "기업" : "개인",
+                selectedBlog !== "all" ? selectedBlog : null,
+                tagCategory !== "all" ? categoryLabel : null,
+                ...selectedSubTags,
+                searchQuery ? `“${searchQuery}”` : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={filters.clearFilters}
+              className="shrink-0 text-muted-foreground"
             >
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 rounded-2xl h-80"></div>
-                </div>
-              ))}
-            </div>
+              <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+              전체 초기화
+            </Button>
+          </div>
+        )}
+      </section>
+      {popularContent}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm text-muted-foreground" role="status">
+          {loading ? (
+            "글을 불러오는 중"
+          ) : error ? (
+            "목록을 불러오지 못했습니다"
           ) : (
-            <div className="space-y-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-700 rounded-lg h-32"></div>
-                </div>
-              ))}
-            </div>
+            <>
+              총{" "}
+              <span className="font-semibold text-foreground">
+                {totalCount.toLocaleString()}
+              </span>
+              개의 글
+            </>
           )}
-        </>
+        </p>
+        <div className="flex items-center gap-2">
+          {!isWeeklyExpanded && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onWeeklyToggle}
+              className="hidden xl:inline-flex"
+            >
+              인기글 보기
+            </Button>
+          )}
+          <ViewToggle
+            viewMode={viewMode}
+            onViewModeChange={filters.handleViewModeChange}
+          />
+        </div>
+      </div>
+      {loading ? (
+        <div
+          aria-label="글 로딩 중"
+          aria-busy="true"
+          className={viewMode === "gallery" ? gridClassName : "space-y-3"}
+        >
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div
+              key={index}
+              className="animate-pulse overflow-hidden rounded-xl border border-border bg-card"
+            >
+              {viewMode === "gallery" && (
+                <div className="aspect-[2/1] bg-muted" />
+              )}
+              <div className="space-y-3 p-5">
+                <div className="h-5 w-4/5 rounded bg-muted" />
+                <div className="h-4 w-1/3 rounded bg-muted" />
+                <div className="h-4 rounded bg-muted" />
+                <div className="h-4 w-2/3 rounded bg-muted" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : error ? (
+        <div
+          role="alert"
+          className="rounded-xl border border-border bg-card px-5 py-12 text-center"
+        >
+          <AlertCircle className="mx-auto mb-4 h-8 w-8 text-muted-foreground" />
+          <h2 className="text-lg font-semibold">글을 불러오지 못했습니다</h2>
+          <p className="mb-5 mt-2 text-sm text-muted-foreground">{error}</p>
+          <Button onClick={retry}>다시 시도</Button>
+        </div>
       ) : blogs.length === 0 ? (
-        <div className="text-center py-16">
-          <div className="text-8xl mb-6">🔍</div>
-          <h3 className="text-2xl font-bold mb-3 text-slate-900 dark:text-slate-100">
-            검색 결과가 없습니다
-          </h3>
-          <p className="text-slate-600 dark:text-slate-400 text-lg">
-            다른 키워드로 검색해보세요.
+        <div className="rounded-xl border border-dashed border-border px-5 py-12 text-center">
+          <Search className="mx-auto mb-4 h-8 w-8 text-muted-foreground" />
+          <h2 className="text-lg font-semibold">
+            {filters.hasActiveFilters
+              ? "조건에 맞는 글이 없습니다"
+              : "아직 등록된 글이 없습니다"}
+          </h2>
+          <p className="mb-5 mt-2 text-sm text-muted-foreground">
+            {filters.hasActiveFilters
+              ? "검색어를 바꾸거나 필터를 초기화해보세요."
+              : "새로운 기술 이야기가 올라오면 이곳에서 볼 수 있어요."}
           </p>
+          {filters.hasActiveFilters && (
+            <Button variant="outline" onClick={filters.clearFilters}>
+              필터 초기화
+            </Button>
+          )}
         </div>
       ) : (
         <>
-          {/* 검색 결과 개수 표시 */}
-          {searchQuery && (
-            <div className="mb-4 text-sm text-slate-600 dark:text-slate-400">
-              '
-              <span className="font-medium text-slate-900 dark:text-slate-100">
-                {searchQuery}
-              </span>
-              ' 검색 결과{" "}
-              <span className="font-semibold text-blue-600 dark:text-blue-400">
-                {totalCount}개
-              </span>
-            </div>
-          )}
-          {/* 블로그 목록 */}
-          {viewMode === "gallery" ? (
-            <div
-              className={`grid grid-cols-1 md:grid-cols-2 ${
-                isWeeklyExpanded ? "xl:grid-cols-2" : "xl:grid-cols-3"
-              } gap-8`}
-            >
-              {blogs.map((blog) => (
-                <BlogCard
-                  key={blog.id}
-                  blog={blog}
-                  onLoginClick={onLoginClick}
-                  selectedSubTags={selectedSubTags}
-                  onTagClick={handleTagClick}
-                />
-              ))}
+          <div className={viewMode === "gallery" ? gridClassName : "space-y-3"}>
+            {blogs.map(renderBlog)}
+          </div>
+          {loadMoreError ? (
+            <div role="alert" className="py-8 text-center">
+              <p className="mb-3 text-sm text-muted-foreground">
+                {loadMoreError}
+              </p>
+              <Button variant="outline" onClick={loadMore}>
+                다시 불러오기
+              </Button>
             </div>
           ) : (
-            <div className="space-y-4">
-              {blogs.map((blog) => (
-                <BlogListItem
-                  key={blog.id}
-                  blog={blog}
-                  onLoginClick={onLoginClick}
-                />
-              ))}
-            </div>
-          )}
-
-          {/* 무한 스크롤 트리거 */}
-          {onLoadMore && hasMore !== undefined && (
             <InfiniteScrollTrigger
-              onLoadMore={onLoadMore}
+              onLoadMore={loadMore}
               hasMore={hasMore}
-              loading={loadingMore || false}
+              loading={loadingMore}
             />
           )}
-
-          {/* 푸터가 표시될 때 여백 추가 */}
-          {!hasMore && !loading && blogs.length > 0 && (
-            <div className="pb-16"></div>
+          {!hasMore && (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              모든 글을 확인했어요.
+            </p>
           )}
         </>
       )}

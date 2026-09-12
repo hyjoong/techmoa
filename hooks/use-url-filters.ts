@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import type { TagCategory } from "@/lib/tag-filters";
+import { TAG_FILTER_OPTIONS, type TagCategory } from "@/lib/tag-filters";
 export type { TagCategory } from "@/lib/tag-filters";
 
 export type BlogType = "company" | "personal";
@@ -31,6 +31,7 @@ export interface UrlFiltersActions {
   hasActiveFilters: boolean;
   handleTagCategoryChange: (category: TagCategory) => void;
   handleSubTagChange: (subTags: string[]) => void;
+  handleTagClick: (tag: string) => void;
 }
 
 export function useUrlFilters(): UrlFilters & UrlFiltersActions {
@@ -52,7 +53,7 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
       subtagsParam
         ? subtagsParam.split(",").filter((tag) => tag.trim() !== "")
         : [],
-    [subtagsParam]
+    [subtagsParam],
   );
 
   // URL 업데이트 함수
@@ -82,7 +83,7 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
       const newURL = params.toString() ? `?${params.toString()}` : "/";
       router.replace(newURL, { scroll: false });
     },
-    [router, searchParams]
+    [router, searchParams],
   );
 
   // 블로그 타입 변경 핸들러
@@ -98,7 +99,7 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
         subtags: "",
       });
     },
-    [updateURL, viewMode, searchQuery]
+    [updateURL, viewMode, searchQuery],
   );
 
   // 블로그 선택 변경 핸들러
@@ -106,7 +107,7 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
     (newBlog: string) => {
       updateURL({ blog: newBlog, page: 1, view: viewMode, q: searchQuery });
     },
-    [updateURL, viewMode, searchQuery]
+    [updateURL, viewMode, searchQuery],
   );
 
   // 페이지 변경 핸들러
@@ -114,7 +115,7 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
     (page: number) => {
       updateURL({ page });
     },
-    [updateURL]
+    [updateURL],
   );
 
   // 뷰 모드 변경 핸들러
@@ -122,7 +123,7 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
     (mode: ViewMode) => {
       updateURL({ view: mode, q: searchQuery });
     },
-    [updateURL, searchQuery]
+    [updateURL, searchQuery],
   );
 
   // 검색 변경 핸들러
@@ -130,14 +131,14 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
     (query: string) => {
       updateURL({ q: query, page: 1 });
     },
-    [updateURL]
+    [updateURL],
   );
 
   const handleTagCategoryChange = useCallback(
     (category: TagCategory) => {
       updateURL({ tag: category, page: 1, subtags: "" });
     },
-    [updateURL]
+    [updateURL],
   );
 
   const handleSubTagChange = useCallback(
@@ -147,7 +148,28 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
         page: 1,
       });
     },
-    [updateURL]
+    [updateURL],
+  );
+
+  // 카테고리와 세부 태그를 한 번에 갱신해 URL 변경 간 덮어쓰기를 방지한다.
+  const handleTagClick = useCallback(
+    (tag: string) => {
+      const category =
+        TAG_FILTER_OPTIONS.find(
+          (option) => option.id === tagCategory && option.tags.includes(tag),
+        ) ?? TAG_FILTER_OPTIONS.find((option) => option.tags.includes(tag));
+      const categoryId = category?.id ?? "else";
+      const tags = tagCategory === categoryId ? selectedSubTags : [];
+      updateURL({
+        tag: categoryId,
+        subtags: (tags.includes(tag)
+          ? tags.filter((item) => item !== tag)
+          : [...tags, tag]
+        ).join(","),
+        page: 1,
+      });
+    },
+    [selectedSubTags, tagCategory, updateURL],
   );
 
   // 필터 초기화
@@ -191,5 +213,6 @@ export function useUrlFilters(): UrlFilters & UrlFiltersActions {
     hasActiveFilters,
     handleTagCategoryChange,
     handleSubTagChange,
+    handleTagClick,
   };
 }

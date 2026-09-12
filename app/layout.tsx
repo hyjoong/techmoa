@@ -1,11 +1,16 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/components/auth/auth-provider";
+import { BookmarkProvider } from "@/components/bookmark-provider";
 import { AppOverlayProvider } from "@/components/overlay-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { Analytics } from "@vercel/analytics/next";
 
+export const viewport: Viewport = { width: "device-width", initialScale: 1 };
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://techmoa.dev"),
   title: {
     default: "Techmoa - 기술 블로그 모음집",
     template: "%s | Techmoa",
@@ -65,11 +70,6 @@ export const metadata: Metadata = {
       "국내외 IT·개발 기술 블로그의 최신 포스트를 Techmoa에서 한눈에 확인하세요.",
     images: ["/ogImage.png"],
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-  },
   verification: {
     other: {
       "naver-site-verification": "8b48897b4d8eb63c4a776125be8b5c429fcabb1f",
@@ -102,11 +102,15 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AppOverlayProvider>
-            {children}
-            <Toaster />
-            <Analytics />
-          </AppOverlayProvider>
+          <AuthProvider>
+            <BookmarkProvider>
+              <AppOverlayProvider>
+                {children}
+                <Toaster />
+                <Analytics />
+              </AppOverlayProvider>
+            </BookmarkProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -56,7 +56,7 @@ export async function fetchAvailableBlogs() {
 
     // 중복 제거하면서 카테고리 정보 유지
     const companies = Array.from(
-      new Map((companyData || []).map((item) => [item.author, item]))
+      new Map((companyData || []).map((item) => [item.author, item])),
     ).map(([author, item]) => ({
       author,
       blog_type: "company" as const,
@@ -64,7 +64,7 @@ export async function fetchAvailableBlogs() {
     }));
 
     const individuals = Array.from(
-      new Map((personalData || []).map((item) => [item.author, item]))
+      new Map((personalData || []).map((item) => [item.author, item])),
     ).map(([author, item]) => ({
       author,
       blog_type: "personal" as const,
@@ -119,7 +119,7 @@ export async function fetchAvailableBlogs() {
 
     // 개인 블로그 정렬 (알파벳 순)
     const sortedPersonals = individuals.sort((a: AuthorInfo, b: AuthorInfo) =>
-      a.author.localeCompare(b.author)
+      a.author.localeCompare(b.author),
     );
 
     return {
@@ -142,6 +142,7 @@ export async function fetchBlogs({
   author,
   tags,
   tagMode = "or",
+  signal,
 }: {
   page?: number;
   limit?: number;
@@ -151,6 +152,7 @@ export async function fetchBlogs({
   author?: string;
   tags?: string[];
   tagMode?: "and" | "or";
+  signal?: AbortSignal;
 } = {}) {
   let query = supabase.from("blogs").select("*", { count: "exact" });
 
@@ -166,7 +168,7 @@ export async function fetchBlogs({
   if (search && search.trim()) {
     const searchTerm = search.trim();
     query = query.or(
-      `title.ilike.%${searchTerm}%,author.ilike.%${searchTerm}%`
+      `title.ilike.%${searchTerm}%,author.ilike.%${searchTerm}%`,
     );
   }
 
@@ -181,12 +183,14 @@ export async function fetchBlogs({
 
   // 정렬
   const ascending = sortBy === "title";
-  query = query.order(sortBy, { ascending });
+  query = query.order(sortBy, { ascending }).order("id", { ascending: false });
 
   // 페이징
   const from = (page - 1) * limit;
   const to = from + limit - 1;
   query = query.range(from, to);
+
+  if (signal) query = query.abortSignal(signal);
 
   const { data, error, count } = await query;
 

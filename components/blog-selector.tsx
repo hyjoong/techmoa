@@ -76,6 +76,7 @@ export function BlogSelector({
     return (
       <Select value={selectedBlog} onValueChange={onBlogChange} disabled>
         <SelectTrigger
+          aria-label="블로그 선택"
           className={`w-full sm:w-[200px] rounded-xl border-border/50 hover:border-primary/50 transition-all duration-200 ${className}`}
         >
           <SelectValue placeholder="로딩 중..." />
@@ -90,6 +91,7 @@ export function BlogSelector({
   return (
     <Select value={selectedBlog} onValueChange={onBlogChange}>
       <SelectTrigger
+        aria-label="블로그 선택"
         className={`w-full sm:w-[200px] rounded-xl border-border/50 hover:border-primary/50 transition-all duration-200 ${className}`}
         disabled={loading}
       >
