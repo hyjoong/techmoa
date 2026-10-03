@@ -28,31 +28,41 @@ interface AuthorInfo {
   category?: "FE" | "BE" | "AI" | "APP" | null;
 }
 
+async function fetchBlogAuthors(
+  blogType: AuthorInfo["blog_type"],
+): Promise<Pick<AuthorInfo, "author" | "category">[]> {
+  const authors: Pick<AuthorInfo, "author" | "category">[] = [];
+  const pageSize = 1000;
+  let offset = 0;
+
+  while (true) {
+    const { data, error } = await supabase
+      .from("blogs")
+      .select("author, category")
+      .eq("blog_type", blogType)
+      .order("id", { ascending: true })
+      .range(offset, offset + pageSize - 1);
+
+    if (error) {
+      const label = blogType === "company" ? "기업" : "개인";
+      throw new Error(`${label} 블로그 목록 조회 실패: ${error.message}`);
+    }
+
+    if (!data?.length) return authors;
+    authors.push(...data);
+    // 서버의 반환 한도가 요청 크기보다 작아도 다음 행부터 계속 읽는다.
+    offset += data.length;
+  }
+}
+
 // 사용 가능한 블로그 목록 조회 (기업/개인별)
 export async function fetchAvailableBlogs() {
   try {
     // 카테고리 정보를 포함하여 조회 (기업/개인 병렬 요청)
-    const [
-      { data: companyData, error: companyError },
-      { data: personalData, error: personalError },
-    ] = await Promise.all([
-      supabase
-        .from("blogs")
-        .select("author, category")
-        .eq("blog_type", "company"),
-      supabase
-        .from("blogs")
-        .select("author, category")
-        .eq("blog_type", "personal"),
+    const [companyData, personalData] = await Promise.all([
+      fetchBlogAuthors("company"),
+      fetchBlogAuthors("personal"),
     ]);
-
-    if (companyError) {
-      throw new Error(`기업 블로그 목록 조회 실패: ${companyError.message}`);
-    }
-
-    if (personalError) {
-      throw new Error(`개인 블로그 목록 조회 실패: ${personalError.message}`);
-    }
 
     // 중복 제거하면서 카테고리 정보 유지
     const companies = Array.from(

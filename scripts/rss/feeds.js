@@ -127,6 +127,27 @@ export const RSS_FEEDS = [
     type: "company",
   },
 
+  {
+    name: "인프랩",
+    url: "https://tech.inflab.com/rss.xml",
+    type: "company",
+  },
+  {
+    name: "NHN Cloud",
+    url: "https://meetup.nhncloud.com/rss",
+    type: "company",
+  },
+  {
+    name: "하이퍼엑셀",
+    url: "https://hyper-accel.github.io/index.xml",
+    type: "company",
+  },
+  {
+    name: "한글과컴퓨터",
+    url: "https://tech.hancom.com/feed/",
+    type: "company",
+  },
+
   // 개인 블로그
   // FE
   {
@@ -171,6 +192,24 @@ export const RSS_FEEDS = [
     type: "personal",
     category: "FE",
   },
+  {
+    name: "김용찬",
+    url: "https://yceffort.kr/feed.xml",
+    type: "personal",
+    category: "FE",
+  },
+  {
+    name: "민은영",
+    url: "https://danbom425.tistory.com/rss",
+    type: "personal",
+    category: "FE",
+  },
+  {
+    name: "김찬희",
+    url: "https://v2.velog.io/rss/superlipbalm",
+    type: "personal",
+    category: "FE",
+  },
   // BE
   {
     name: "향로",
@@ -181,6 +220,24 @@ export const RSS_FEEDS = [
   {
     name: "망나니개발자",
     url: "https://mangkyu.tistory.com/rss",
+    type: "personal",
+    category: "BE",
+  },
+  {
+    name: "서대영",
+    url: "https://www.daleseo.com/rss.xml",
+    type: "personal",
+    category: "BE",
+  },
+  {
+    name: "김남윤",
+    url: "https://cheese10yun.github.io/rss2.xml",
+    type: "personal",
+    category: "BE",
+  },
+  {
+    name: "변정훈",
+    url: "https://feeds.feedburner.com/rss_outsider_dev?format=xml",
     type: "personal",
     category: "BE",
   },

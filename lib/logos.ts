@@ -28,6 +28,10 @@ export const logoMap: Record<string, string> = {
   여기어때: "/logos/gccompany.ico",
   AB180: "/logos/ab180.ico",
   사람인: "/logos/saramin.ico",
+  인프랩: "/logos/inflab.png",
+  "NHN Cloud": "/logos/nhncloud.ico",
+  하이퍼엑셀: "/logos/hyperaccel.png",
+  한글과컴퓨터: "/logos/hancom-company.ico",
 };
 
 // 로고 URL을 가져오는 헬퍼 함수

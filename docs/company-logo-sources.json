@@ -1,0 +1,34 @@
+{
+  "verifiedOn": "2026-10-03",
+  "feedAdditionCommit": "9e30d78b226bf4e9fb13e407f5e353a0a8224713",
+  "logos": [
+    {
+      "company": "인프랩",
+      "path": "/logos/inflab.png",
+      "sourcePage": "https://tech.inflab.com/",
+      "sourceImage": "https://tech.inflab.com/icons/icon-192x192.png?v=85c8af743e179883b18fef5acc3a66b0",
+      "sha256": "5b77be28fd1f20dba67fcc30847dd4647d06b6ff13f46bf2e44c4fcb43345018"
+    },
+    {
+      "company": "NHN Cloud",
+      "path": "/logos/nhncloud.ico",
+      "sourcePage": "https://company.nhncloud.com/about?lang=ko",
+      "sourceImage": "https://company.nhncloud.com/favicon/NHNCloud_Favicon.ico",
+      "sha256": "fe0b8d958d48f6fb6990944ebcc7337227ed21bcd8890cb4f676d1230c309789"
+    },
+    {
+      "company": "하이퍼엑셀",
+      "path": "/logos/hyperaccel.png",
+      "sourcePage": "https://hyper-accel.github.io/",
+      "sourceImage": "https://hyper-accel.github.io/apple-touch-icon.png",
+      "sha256": "22717b9404b464dc4cf278ea060651828c6a0a6d80dab4f8083fb2d061009250"
+    },
+    {
+      "company": "한글과컴퓨터",
+      "path": "/logos/hancom-company.ico",
+      "sourcePage": "https://www.hancom.com/",
+      "sourceImage": "https://www.hancom.com/favicon.ico",
+      "sha256": "6fec9db0f3e4b218d2eb598d2a1d83934fd479954d66541ee7e32fa65eaee67b"
+    }
+  ]
+}
