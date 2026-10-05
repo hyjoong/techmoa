@@ -1,17 +1,13 @@
-import dotenv from "dotenv";
-dotenv.config();
-import { runRssCrawl } from "../lib/server/rss-crawler-service.js";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
+import { runRssCli } from "./rss/cli.js";
 
-async function main() {
-  try {
-    await runRssCrawl();
-  } catch (error) {
-    console.error("❌ 크롤링 중 치명적 오류:", error.message);
-    process.exit(1);
-  }
-}
+export { runRssCli } from "./rss/cli.js";
 
-// 스크립트로 직접 실행될 때만 크롤링 시작 (import 시 자동 실행 방지)
-if (import.meta.url === `file://${process.argv[1]}`) {
-  main();
+// import만으로 dotenv·서비스·크롤러를 실행하지 않는다.
+if (
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(resolve(process.argv[1])).href
+) {
+  process.exitCode = await runRssCli(process.argv.slice(2));
 }

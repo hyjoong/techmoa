@@ -4,7 +4,32 @@ on:
   schedule:
     - cron: "0 22 * * *" # 한국 시간 오전 7시
     - cron: "0 10 * * *" # 한국 시간 오후 7시
-  workflow_dispatch: # 수동 실행 가능
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "미리보기 (DB 쓰기·AI 분류·알림 없음)"
+        type: boolean
+        default: true
+      feed:
+        description: "블로그 이름 (비우면 전체)"
+        type: string
+        default: ""
+      since:
+        description: "시작 날짜 (YYYY-MM-DD, 한국시간) 또는 시간대 포함 ISO 시각"
+        type: string
+        default: ""
+      max_per_feed:
+        description: "피드별 신규 분류 후보 상한"
+        type: string
+        default: "20"
+      max_ai_articles:
+        description: "실행 전체 AI 분류 대상 글 상한 (HTTP 재시도 제외)"
+        type: string
+        default: "120"
+      send_notifications:
+        description: "실제 저장 시 알림 발송"
+        type: boolean
+        default: false
   push:
     branches:
       - main
@@ -19,9 +44,7 @@ on:
 
 # 권한 설정
 permissions:
-  contents: write
-  issues: write
-  pull-requests: write
+  contents: read
 
 jobs:
   crawl-rss:
@@ -46,8 +69,26 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run RSS crawler
-        run: pnpm run crawl-rss
+        shell: bash
+        run: |
+          args=(--max-ai-articles 120)
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            args=()
+            [[ "$INPUT_DRY_RUN" == "true" ]] && args+=(--dry-run)
+            [[ "$INPUT_SEND_NOTIFICATIONS" != "true" ]] && args+=(--no-notifications)
+            [[ -n "$INPUT_FEED" ]] && args+=(--feed "$INPUT_FEED")
+            [[ -n "$INPUT_SINCE" ]] && args+=(--since "$INPUT_SINCE")
+            args+=(--max-per-feed "$INPUT_MAX_PER_FEED")
+            args+=(--max-ai-articles "$INPUT_MAX_AI_ARTICLES")
+          fi
+          pnpm run crawl-rss "${args[@]}"
         env:
+          INPUT_DRY_RUN: ${{ inputs.dry_run }}
+          INPUT_SEND_NOTIFICATIONS: ${{ inputs.send_notifications }}
+          INPUT_FEED: ${{ inputs.feed }}
+          INPUT_SINCE: ${{ inputs.since }}
+          INPUT_MAX_PER_FEED: ${{ inputs.max_per_feed }}
+          INPUT_MAX_AI_ARTICLES: ${{ inputs.max_ai_articles }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           FIREBASE_SERVICE_ACCOUNT_KEY: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_KEY }}
@@ -63,52 +104,6 @@ jobs:
           path: rss-crawl-results.json
           retention-days: 30
 
-      - name: Create summary comment
-        if: github.event_name == 'push'
-        uses: actions/github-script@v9
-        with:
-          script: |
-            const fs = require('fs');
-            let results = [];
-
-            try {
-              const data = fs.readFileSync('rss-crawl-results.json', 'utf8');
-              results = JSON.parse(data);
-            } catch (error) {
-              console.log('결과 파일을 읽을 수 없습니다.');
-            }
-
-            const successCount = results.filter(r => r.success).length;
-            const errorCount = results.filter(r => !r.success).length;
-            const totalCount = results.length;
-            const newPostsCount = results.reduce((sum, r) => sum + (r.newPosts || 0), 0);
-
-            let comment = `## 📊 RSS 크롤링 완료\n\n`;
-            comment += `📈 **크롤링 결과**: ${successCount}/${totalCount}개 피드 성공\n`;
-            comment += `🆕 **새 포스트**: ${newPostsCount}개 추가됨\n\n`;
-
-            if (errorCount > 0) {
-              comment += `❌ **실패한 피드**:\n`;
-              results.filter(r => !r.success).forEach(feed => {
-                comment += `- \`${feed.url}\`: ${feed.error}\n`;
-              });
-            }
-
-            comment += `\n---\n`;
-            comment += `*이 크롤링은 자동으로 실행됩니다.*`;
-
-            // 커밋에 코멘트 추가 (GitHub API 사용)
-            const { data: commits } = await github.rest.repos.listCommits({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              per_page: 1
-            });
-
-            if (commits.length > 0) {
-              await github.rest.repos.createCommitComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                commit_sha: commits[0].sha,
-                body: comment
-              });
-            }
+      - name: Write crawl summary
+        if: always()
+        run: node scripts/rss/write-workflow-summary.js

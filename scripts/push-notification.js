@@ -221,20 +221,23 @@ export async function processNewArticleNotification(article) {
 export async function sendBatchNotifications(allNewArticles) {
   if (allNewArticles.length === 0) {
     console.log("📭 새 글이 없어 알림을 전송하지 않습니다.");
-    return;
+    return { success: true, skipped: true, count: 0 };
   }
 
   // 인기 블로그 글은 이미 개별 알림 전송됨
   // 나머지 글들만 모아서 일일 요약 전송
   const summaryArticles = allNewArticles.filter(
-    (article) => !INSTANT_NOTIFICATION_BLOGS.includes(article.author)
+    (article) => !INSTANT_NOTIFICATION_BLOGS.includes(article.author),
   );
 
   if (summaryArticles.length > 0) {
-    await sendDailySummaryNotification(summaryArticles);
+    const result = await sendDailySummaryNotification(summaryArticles);
+    if (!result.success) return result;
+    console.log(`\n📊 알림 전송 완료: 총 ${allNewArticles.length}개 글 처리`);
+    return result;
   }
 
-  console.log(`\n📊 알림 전송 완료: 총 ${allNewArticles.length}개 글 처리`);
+  return { success: true, skipped: true, count: 0 };
 }
 
 // 초기화

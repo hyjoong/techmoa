@@ -9,11 +9,15 @@ const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
  */
 export async function sendDiscordNotification(newArticles) {
   if (!DISCORD_WEBHOOK_URL) {
-    console.log("⚠️  DISCORD_WEBHOOK_URL이 설정되지 않았습니다. Discord 알림을 건너뜁니다.");
-    return;
+    console.log(
+      "⚠️  DISCORD_WEBHOOK_URL이 설정되지 않았습니다. Discord 알림을 건너뜁니다.",
+    );
+    return { success: true, skipped: true, reason: "Webhook not configured" };
   }
 
-  if (!newArticles || newArticles.length === 0) return;
+  if (!newArticles || newArticles.length === 0) {
+    return { success: true, skipped: true, count: 0 };
+  }
 
   try {
     // 블로그별로 그룹화
@@ -38,7 +42,10 @@ export async function sendDiscordNotification(newArticles) {
     const embeds = [];
     for (let i = 0; i < fields.length; i += 25) {
       embeds.push({
-        title: i === 0 ? `🚀 새 기술블로그 글 ${newArticles.length}개 업데이트!` : null,
+        title:
+          i === 0
+            ? `🚀 새 기술블로그 글 ${newArticles.length}개 업데이트!`
+            : null,
         color: 0x5865f2, // Discord 블루
         fields: fields.slice(i, i + 25),
         ...(i === 0 && {
@@ -56,12 +63,18 @@ export async function sendDiscordNotification(newArticles) {
 
     if (response.ok) {
       console.log(`✅ Discord 알림 전송 완료 (${newArticles.length}개 글)`);
+      return { success: true, count: newArticles.length };
     } else {
       const text = await response.text();
       console.error(`❌ Discord 알림 전송 실패: ${response.status} ${text}`);
+      return {
+        success: false,
+        error: `Discord HTTP ${response.status}: ${text}`,
+      };
     }
   } catch (error) {
     console.error("❌ Discord 알림 전송 중 오류:", error.message);
+    return { success: false, error: error.message };
   }
 }
 

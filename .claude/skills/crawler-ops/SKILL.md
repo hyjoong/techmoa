@@ -31,20 +31,25 @@ pnpm crawl-rss
 
 `.env`에 필요한 값: `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` (필수), `FIREWORKS_API_KEY` (태그 생성), `DISCORD_WEBHOOK_URL`·`FIREBASE_SERVICE_ACCOUNT_KEY` (알림, 선택).
 
-**주의: 로컬 실행도 프로덕션 DB에 쓰고 실제 알림을 보낸다.** 드라이런 모드는 없다. 수집 로직만 테스트하려면 알림 없이 돌리는 방법을 쓴다:
+**주의: 옵션 없는 로컬 실행은 프로덕션 DB에 쓰고 실제 알림을 보낸다.** 먼저 미리보기로 대상을 확인한다:
 
 ```bash
-# dotenv 로드는 엔트리 스크립트에만 있으므로 서비스 모듈을 직접 부를 땐 --env-file 필수
-node --env-file=.env -e "import('./lib/server/rss-crawler-service.js').then(m => m.runRssCrawl({ sendNotifications: false }))"
+pnpm crawl-rss --dry-run --feed "NHN Cloud" --max-per-feed 20
+# 같은 범위를 알림 없이 실제 저장
+pnpm crawl-rss --feed "NHN Cloud" --max-per-feed 20 --no-notifications
 ```
 
-특정 피드 하나만 테스트하려면 `runRssCrawl({ feeds: [...], sendNotifications: false })`에 피드 객체를 직접 넘긴다.
+미리보기는 기존 DB와 RSS를 읽지만 AI 호출·DB 쓰기·제외 기록 저장·알림을 실행하지 않는다. 신규 후보는 AI 판정 전 최대 예상 건수다. `--feed`는 여러 번 지정할 수 있다. `--since`의 날짜만 있는 값은 한국시간 00시이며, 시간은 시간대가 있는 ISO 값을 사용한다. `--max-ai-articles`는 전체 실행의 AI 분류 대상 글 수를 제한한다(HTTP 재시도는 별도). 전체 옵션과 결과 형식은 `docs/rss-crawler-operations.md`를 참고한다.
+
+프로그램에서 호출할 때는 `runRssCrawl({ feeds: [...], dryRun: true, sendNotifications: false })`를 사용한다. 환경 설정은 호출 전에 준비한다.
 
 제어 env: `TAG_REQUEST_DELAY_MS` (기본 8000ms — Fireworks 레이트리밋이 낮아 줄이면 429), `RSS_FEED_DELAY_MS` (기본 1000ms).
 
 ## 운영 (GitHub Actions)
 
 - `.github/workflows/rss-crawler.yml` — 한국시간 오전 7시/오후 7시 + 크롤러 관련 파일 push 시 + 수동 트리거(`gh workflow run rss-crawler.yml`)
+- 정기·푸시 실행은 AI 분류 대상 120건 한도를 적용한다. 수동 실행은 미리보기·알림 끄기가 기본값이다.
+- 결과는 `rss-crawl-results.json`과 Actions 실행 Summary에 남는다. 일부 피드 실패도 종료 코드 1로 표시하며 나머지 피드는 계속 처리한다. 옵션 오류는 2, 정상 완료는 0이다.
 - 실패 조사: `gh run list --workflow=rss-crawler.yml` → `gh run view <id> --log-failed`
 - secrets에 env가 들어 있으므로 새 env를 추가하면 워크플로우 yml과 GitHub secrets 양쪽에 등록해야 한다.
 
@@ -59,6 +64,7 @@ node --env-file=.env -e "import('./lib/server/rss-crawler-service.js').then(m =>
 ## Supabase 수동 DDL
 
 `scripts/sql/*.sql`은 자동 마이그레이션이 아니다. 새 테이블/함수가 필요하면:
+
 1. DDL을 `scripts/sql/`에 파일로 남기고
 2. Supabase 대시보드 → SQL Editor에서 수동 실행한다
 3. 코드는 테이블 부재 시에도 죽지 않게 경고만 남기고 계속 진행하는 패턴을 따른다 (`rss-crawler-service.js`의 `recordExclusion` 참고)
