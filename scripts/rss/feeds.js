@@ -40,7 +40,7 @@ export const RSS_FEEDS = [
   },
   {
     name: "우아한형제들",
-    url: "https://techblog.woowahan.com/feed/",
+    url: "https://techblog.woowahan.com/?feed=rss2",
     type: "company",
   },
   { name: "네이버", url: "https://d2.naver.com/d2.atom", type: "company" },
