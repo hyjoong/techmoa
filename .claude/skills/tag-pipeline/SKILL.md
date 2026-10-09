@@ -47,10 +47,12 @@ TAG_BACKFILL_LIMIT=100 pnpm backfill-tags
 
 ## AI 태그 생성 동작 (scripts/ai-tags.js)
 
-- 모델: `FIREWORKS_MODEL` env (기본 `accounts/fireworks/models/deepseek-v3p1-terminus`)
-- 프롬프트가 화이트리스트(`ALL_FILTER_TAGS`) 밖 태그를 금지하고, JSON 배열만 응답하도록 강제한다. 응답이 JSON이 아니면 쉼표/줄바꿈 파싱으로 폴백.
+- 모델: `FIREWORKS_MODEL` env (기본 `accounts/fireworks/models/gpt-oss-120b`). Actions에서는 같은 이름의 Repository variable로 변경할 수 있다. 모델 목록 조회는 추론을 실행하지 않으며, 목록에 있어도 계정별 실제 추론 성공은 별도 검증 대상이다.
+- 화이트리스트(`ALL_FILTER_TAGS`)를 JSON 스키마와 프롬프트에서 공유한다. `reasoning_effort: low`, 최대 출력 2048토큰, 요청부터 응답 본문까지 30초 제한을 적용한다. 429/5xx만 최대 3회 시도하고 기존 5초·10초 대기를 유지한다.
+- 정상 종료(`finish_reason: stop`)와 문자열 배열 JSON을 검증한다. 빈 본문·누락된 응답·잘린 JSON·허용 태그가 전혀 없는 응답은 오류이며 비기술 판정에 사용하지 않는다. 쉼표/줄바꿈 파싱으로 복구하지 않는다.
 - **빈 배열 응답은 "비기술 글" 판정 신호**로도 쓰인다 — 크롤러가 개인 블로그 글의 수집 제외 여부를 이 신호로 결정한다 (`scripts/rss/filter.js`의 `isNonTechClassification`). 프롬프트의 빈 배열 규칙을 수정할 때는 이 부작용을 반드시 고려할 것. 회고/커리어/문화 글은 기술 글로 취급한다는 규칙도 프롬프트에 있다.
 - 크롤링 시 최종 태그는 피드 category 기반 기본 태그 + AI 태그를 병합해 최대 8개로 자른다.
+- 기본 수집은 AI 오류가 있어도 글 저장을 계속하고 결과를 `partial_failure`로 보고한다. 이렇게 저장된 글은 다음 수집에서 중복이므로 자동 재분류하지 않는다. 태그 복구는 별도 백필로 진행하며, 백필 미리보기에도 AI 호출이 발생한다.
 
 ## 태그가 이상하게 달릴 때 디버깅 순서
 

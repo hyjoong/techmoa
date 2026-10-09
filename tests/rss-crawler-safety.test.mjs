@@ -24,6 +24,7 @@ const nextFeed = {
 // 허용 목록 밖 모듈은 로드하지 않으므로 dotenv와 실제 클라이언트도 실행되지 않는다.
 function createHarness({
   parseError = null,
+  transportError = null,
   insertError = null,
   classificationStatus = "ok",
   items,
@@ -37,6 +38,8 @@ function createHarness({
   batchResult,
   discordResult,
   notificationImportError = null,
+  notificationCleanupError = null,
+  thumbnailResult = null,
 } = {}) {
   const calls = {
     parsed: [],
@@ -51,12 +54,11 @@ function createHarness({
     reads: [],
     modules: [],
     insertRequests: [],
+    http: [],
+    cleanups: 0,
   };
   class MockParser {
-    constructor(options) {
-      assert.equal(options.timeout, 10000);
-    }
-    async parseURL(url) {
+    async parseString(url) {
       calls.parsed.push(url);
       const error =
         typeof parseError === "function" ? parseError(url) : parseError;
@@ -157,6 +159,10 @@ function createHarness({
       },
     },
     "../../scripts/push-notification.js": {
+      cleanupPushNotifications: async () => {
+        calls.cleanups++;
+        if (notificationCleanupError) throw notificationCleanupError;
+      },
       processNewArticleNotification: async (article) => {
         calls.individual.push(article);
         if (notificationError) throw notificationError;
@@ -171,7 +177,23 @@ function createHarness({
     "../../scripts/rss/thumbnail.js": {
       extractThumbnail: async (item) => {
         calls.thumbnails.push(item);
-        return null;
+        return thumbnailResult;
+      },
+    },
+    "../../scripts/rss/http.js": {
+      fetchTextWithTimeout: async (url, options) => {
+        calls.http.push({ url, options });
+        assert.match(options.headers.Accept, /application\/rss\+xml/);
+        assert.equal(
+          options.headers["User-Agent"],
+          "Techmoa RSS Reader (+https://techmoa.dev)",
+        );
+        const error =
+          typeof transportError === "function"
+            ? transportError(url)
+            : transportError;
+        if (error) throw error;
+        return url;
       },
     },
     "../../scripts/rss/dedup.js": { normalizeUrl, isDuplicate },
@@ -236,6 +258,7 @@ test("알림 비활성화는 인기 블로그의 개별·배치·Discord 알림�
   assert.equal(harness.calls.individual.length, 0);
   assert.equal(harness.calls.batch.length, 0);
   assert.equal(harness.calls.discord.length, 0);
+  assert.equal(harness.calls.cleanups, 0);
   assert.deepEqual(harness.calls.delays, [8000, 1000]);
 });
 
@@ -251,6 +274,7 @@ test("알림 기본값은 개별·배치·Discord 호출을 유지한다", async
   assert.equal(harness.calls.individual[0].author, "토스");
   assert.equal(harness.calls.batch.length, 1);
   assert.equal(harness.calls.discord.length, 1);
+  assert.equal(harness.calls.cleanups, 1);
 });
 
 test("배치·Discord 실패 반환은 저장된 결과와 함께 최종 보고서에 남는다", async () => {
@@ -483,9 +507,9 @@ test("날짜 범위를 먼저 적용하고 최신 신규 후보를 상한까지 
     ["기술 글 newest", "기술 글 deferred"],
   );
   assert.equal(harness.calls.exclusions.length, 1);
-  assert.equal(
-    harness.calls.thumbnails.some((entry) => entry.title === "기술 글 older"),
-    false,
+  assert.deepEqual(
+    harness.calls.thumbnails.map((entry) => entry.title),
+    ["기술 글 newest", "기술 글 deferred"],
   );
 });
 
@@ -501,6 +525,107 @@ test("since와 같은 시각의 글은 수집 대상이다", async () => {
   });
   assert.equal(report.totalCandidates, 1);
   assert.equal(report.totalSkippedByDate, 0);
+});
+
+test("AI 제외 글과 이미 제외한 URL은 썸네일 요청을 하지 않는다", async () => {
+  const harness = createHarness({
+    items: [item("excluded"), item("non-tech")],
+    excludedRows: [{ external_url: item("excluded").link }],
+    classificationStatus: { status: "ok", tags: [], nonTech: true },
+  });
+  const result = await harness.runRssCrawl({
+    feeds: [{ ...popularFeed, type: "personal" }],
+    supabase: harness.supabase,
+    sendNotifications: false,
+  });
+  assert.equal(result.totalDuplicates, 1);
+  assert.equal(result.totalExcluded, 1);
+  assert.equal(harness.calls.ai.length, 1);
+  assert.equal(harness.calls.thumbnails.length, 0);
+});
+
+test("지연한 썸네일은 원본 RSS 필드를 보존하고 DB에는 최종 URL만 넣는다", async () => {
+  const source = {
+    ...item("new"),
+    enclosure: { url: "https://example.com/image.png", type: "image/png" },
+    "content:encoded": "<p>기술 내용</p>",
+  };
+  const harness = createHarness({
+    items: [source],
+    thumbnailResult: source.enclosure.url,
+  });
+  const result = await harness.runRssCrawl({
+    feeds: [popularFeed],
+    supabase: harness.supabase,
+    sendNotifications: false,
+  });
+  assert.equal(result.totalNewArticles, 1);
+  assert.equal(harness.calls.thumbnails.length, 1);
+  assert.equal(harness.calls.thumbnails[0], source);
+  assert.equal(harness.calls.inserted[0].thumbnail_url, source.enclosure.url);
+  assert.equal("enclosure" in harness.calls.inserted[0], false);
+  assert.equal("content:encoded" in harness.calls.inserted[0], false);
+});
+
+test("AI 분류 오류 원인은 누적 보고서에도 보존된다", async () => {
+  const harness = createHarness({
+    classificationStatus: {
+      status: "error",
+      tags: [],
+      nonTech: false,
+      error: "HTTP 404: MODEL_NOT_FOUND",
+    },
+  });
+  const result = await harness.runRssCrawl({
+    feeds: [popularFeed],
+    supabase: harness.supabase,
+    sendNotifications: false,
+  });
+  assert.equal(result.status, "partial_failure");
+  assert.equal(result.totalNewArticles, 1);
+  assert.match(result.errors[0].message, /HTTP 404: MODEL_NOT_FOUND/);
+});
+
+test("RSS 전송 실패도 해당 피드 오류로 격리하고 다음 피드를 처리한다", async () => {
+  const harness = createHarness({
+    transportError: (url) =>
+      url === popularFeed.url ? new Error("HTTP 403") : null,
+  });
+  const result = await harness.runRssCrawl({
+    supabase: harness.supabase,
+    sendNotifications: false,
+  });
+  assert.equal(result.status, "partial_failure");
+  assert.equal(result.errors[0].stage, "parse");
+  assert.match(result.errors[0].message, /HTTP 403/);
+  assert.deepEqual(harness.calls.parsed, [nextFeed.url]);
+  assert.equal(result.totalNewArticles, 1);
+});
+
+test("엄격 오류로 후속 피드가 중단되어도 이미 로드한 푸시 모듈을 정리한다", async () => {
+  const harness = createHarness({
+    parseError: (url) =>
+      url === nextFeed.url ? new Error("Invalid XML") : null,
+  });
+  await assert.rejects(
+    harness.runRssCrawl({ supabase: harness.supabase, failOnError: true }),
+    /Invalid XML/,
+  );
+  assert.equal(harness.calls.cleanups, 1);
+});
+
+test("푸시 정리 실패도 저장 결과를 유지하며 실패로 보고한다", async () => {
+  const harness = createHarness({
+    notificationCleanupError: new Error("Cleanup failed"),
+  });
+  const result = await harness.runRssCrawl({
+    feeds: [popularFeed],
+    supabase: harness.supabase,
+  });
+  assert.equal(result.status, "partial_failure");
+  assert.equal(result.totalNewArticles, 1);
+  assert.equal(result.errors[0].stage, "notification");
+  assert.match(result.errors[0].message, /Cleanup failed/);
 });
 
 for (const dryRun of [false, true]) {
@@ -519,6 +644,7 @@ for (const dryRun of [false, true]) {
     assert.equal(report.totalDeferred, 1);
     assert.equal(report.totalAiArticles, dryRun ? 0 : 3);
     assert.equal(harness.calls.ai.length, dryRun ? 0 : 3);
+    assert.equal(harness.calls.thumbnails.length, dryRun ? 0 : 3);
     assert.deepEqual(
       Array.from(report.feedResults, (feed) => feed.candidates),
       [2, 1],

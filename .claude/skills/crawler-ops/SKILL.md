@@ -12,13 +12,13 @@ scripts/rss-crawler.js (엔트리, dotenv 로드)
  └─ lib/server/rss-crawler-service.js :: runRssCrawl()
      1. 기존 글 전체 + excluded_articles URL 인덱스 로드
      2. 피드별 순회 (RSS_FEEDS, 피드 간 1초 지연):
-        a. 파싱 → 요약/썸네일 추출 (scripts/rss/summary.js, thumbnail.js)
+        a. 요청·본문 10초 제한 → XML 파싱·요약 추출 (scripts/rss/http.js, summary.js)
         b. 중복 검사 (scripts/rss/dedup.js — URL 정규화 + author:title)
         c. 규칙 필터 (scripts/rss/filter.js — [운동]/[일상]/[여행]/[먹방] 프리픽스)
         d. AI 태그 생성 (scripts/ai-tags.js, 요청 간 8초 지연)
         e. AI 비기술 판정 → 개인 블로그 + 빈 태그 응답이면 수집 제외
-        f. blogs 테이블 insert → 푸시 알림 처리
-     3. 완료 후 배치 푸시 알림 + Discord 웹훅
+        f. 신규 저장 후보의 썸네일 추출 → blogs insert → 푸시 알림 처리
+     3. 완료 후 배치 푸시 알림 + Discord 웹훅 → 사용한 Firebase 연결 정리
 ```
 
 제외된 글(c, e)은 `excluded_articles` 테이블에 기록되고, 다음 크롤링부터 중복으로 취급되어 AI 재판정 비용이 발생하지 않는다.
@@ -44,6 +44,8 @@ pnpm crawl-rss --feed "NHN Cloud" --max-per-feed 20 --no-notifications
 프로그램에서 호출할 때는 `runRssCrawl({ feeds: [...], dryRun: true, sendNotifications: false })`를 사용한다. 환경 설정은 호출 전에 준비한다.
 
 제어 env: `TAG_REQUEST_DELAY_MS` (기본 8000ms — Fireworks 레이트리밋이 낮아 줄이면 429), `RSS_FEED_DELAY_MS` (기본 1000ms).
+
+AI 모델과 응답 검증은 `tag-pipeline` 스킬을 참고한다. 기본 수집은 AI 오류에도 글 저장을 계속하며 `partial_failure`와 오류 원문을 남긴다. 실패한 태그는 후속 RSS 수집에서 자동 복구되지 않는다.
 
 ## 운영 (GitHub Actions)
 

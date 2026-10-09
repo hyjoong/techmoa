@@ -5,11 +5,11 @@ dotenv.config();
 
 const FIREWORKS_API_KEY = process.env.FIREWORKS_API_KEY;
 const FIREWORKS_MODEL =
-  process.env.FIREWORKS_MODEL ||
-  "accounts/fireworks/models/deepseek-v3p1-terminus";
+  process.env.FIREWORKS_MODEL || "accounts/fireworks/models/gpt-oss-120b";
 let warnedMissingKey = false;
 const RETRY_STATUSES = [429, 500, 502, 503, 504];
 const RETRY_BASE_MS = parseInt(process.env.TAG_RETRY_BASE_MS || "5000", 10); // 기본 5초
+const REQUEST_TIMEOUT_MS = 30000;
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // 태그 후보는 UI 필터 카테고리(lib/tag-data.js)와 동일한 목록에서 파생
@@ -24,24 +24,19 @@ export const mergeAndDedupe = (tags) => {
 };
 
 const parseTagsFromText = (text) => {
-  if (!text) return [];
-
+  let parsed;
   try {
-    const parsed = JSON.parse(text);
-    if (Array.isArray(parsed)) {
-      return mergeAndDedupe(parsed);
-    }
+    parsed = JSON.parse(text);
   } catch {
-    // Fall back to comma/newline parsing for models that do not return JSON.
+    throw new Error("태그 응답이 올바른 JSON 배열이 아닙니다.");
   }
-
-  // 쉼표/줄바꿈 기준 분리
-  const parts = text
-    .replace(/[\[\]]/g, "")
-    .split(/[,\n]/)
-    .map((p) => p.trim().toLowerCase())
-    .filter(Boolean);
-  return mergeAndDedupe(parts);
+  if (
+    !Array.isArray(parsed) ||
+    parsed.some((tag) => typeof tag !== "string" || !tag.trim())
+  ) {
+    throw new Error("태그 응답은 비어 있지 않은 문자열의 배열이어야 합니다.");
+  }
+  return mergeAndDedupe(parsed);
 };
 
 const buildPrompt = ({ title, summary = "", author = "" }) => {
@@ -64,49 +59,87 @@ Article:
 
 async function generateWithFireworks(prompt) {
   const maxAttempts = 3;
-
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    const response = await fetch(
-      "https://api.fireworks.ai/inference/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${FIREWORKS_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: FIREWORKS_MODEL,
-          messages: [
-            {
-              role: "system",
-              content:
-                "You are a tag extraction function. Output only a JSON array of strings. No reasoning.",
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+    let response;
+    let retryStatus;
+    try {
+      response = await fetch(
+        "https://api.fireworks.ai/inference/v1/chat/completions",
+        {
+          method: "POST",
+          signal: controller.signal,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${FIREWORKS_API_KEY}`,
+          },
+          body: JSON.stringify({
+            model: FIREWORKS_MODEL,
+            messages: [
+              {
+                role: "system",
+                content:
+                  "You are a tag extraction function. Output only a JSON array of strings. No reasoning.",
+              },
+              { role: "user", content: prompt },
+            ],
+            temperature: 0,
+            max_tokens: 2048,
+            reasoning_effort: "low",
+            response_format: {
+              type: "json_schema",
+              json_schema: {
+                name: "article_tags",
+                schema: {
+                  type: "array",
+                  items: { type: "string", enum: ALLOWED_TAGS },
+                  maxItems: 6,
+                },
+              },
             },
-            { role: "user", content: prompt },
-          ],
-          temperature: 0,
-          max_tokens: 256,
-          reasoning_effort: "low",
-        }),
+          }),
+        },
+      );
+      if (response.ok) {
+        const data = await response.json();
+        const choice = data?.choices?.[0];
+        if (choice?.finish_reason !== "stop") {
+          throw new Error("태그 응답이 정상적으로 완료되지 않았습니다.");
+        }
+        const content = choice.message?.content;
+        if (typeof content !== "string" || !content.trim()) {
+          throw new Error("태그 응답 본문이 비어 있습니다.");
+        }
+        return content;
       }
-    );
-
-    if (response.ok) {
-      const data = await response.json();
-      return data?.choices?.[0]?.message?.content || "";
+      const body = await response.text();
+      if (RETRY_STATUSES.includes(response.status) && attempt < maxAttempts) {
+        retryStatus = response.status;
+      } else {
+        throw new Error(
+          `Fireworks 요청 실패 (status=${response.status}): ${body}`,
+        );
+      }
+    } catch (error) {
+      if (controller.signal.aborted) {
+        throw new Error("Fireworks 요청이 30초 시간 제한을 초과했습니다.");
+      }
+      throw error;
+    } finally {
+      clearTimeout(timer);
+      controller.abort();
+      if (response?.body && !response.body.locked) {
+        await response.body.cancel().catch(() => {});
+      }
     }
-
-    const body = await response.text();
-    if (RETRY_STATUSES.includes(response.status) && attempt < maxAttempts) {
+    if (retryStatus) {
       const delayMs = RETRY_BASE_MS * attempt;
       console.warn(
-        `⚠️ Fireworks 응답 ${response.status}, ${delayMs}ms 후 재시도 (${attempt}/${maxAttempts})`
+        `⚠️ Fireworks 응답 ${retryStatus}, ${delayMs}ms 후 재시도 (${attempt}/${maxAttempts})`,
       );
       await sleep(delayMs);
-      continue;
     }
-
-    throw new Error(`Fireworks 요청 실패 (status=${response.status}): ${body}`);
   }
 }
 
@@ -117,11 +150,16 @@ export async function classifyArticleTags(article) {
   if (!FIREWORKS_API_KEY) {
     if (!warnedMissingKey) {
       console.warn(
-        "⚠️ FIREWORKS_API_KEY가 설정되지 않아 태그 생성을 건너뜁니다."
+        "⚠️ FIREWORKS_API_KEY가 설정되지 않아 태그 생성을 건너뜁니다.",
       );
       warnedMissingKey = true;
     }
-    return { status: "unavailable", tags: [], nonTech: false };
+    return {
+      status: "unavailable",
+      tags: [],
+      nonTech: false,
+      error: "AI API 키가 설정되지 않았습니다.",
+    };
   }
 
   try {
@@ -137,13 +175,16 @@ export async function classifyArticleTags(article) {
     // 허용 태그만 필터링 후 상위 몇 개만 사용
     const filtered = parsedTags.filter((tag) => ALLOWED_TAGS.includes(tag));
     const tags = mergeAndDedupe(filtered).slice(0, 6);
+    if (parsedTags.length > 0 && tags.length === 0) {
+      throw new Error("태그 응답에 허용된 태그가 없습니다.");
+    }
 
     // nonTech는 모델의 원본 응답 자체가 빈 배열일 때만 true.
-    // 허용 목록 밖 태그를 골라 사후 필터링으로 비워진 경우는 기술 글로 취급해야 한다.
+    // 잘못된 응답이나 허용 목록 밖 태그는 실패로 보고하고 수집 제외에 사용하지 않는다.
     return { status: "ok", tags, nonTech: parsedTags.length === 0 };
   } catch (error) {
     console.error("❌ 태그 생성 중 오류:", error.message);
-    return { status: "error", tags: [], nonTech: false };
+    return { status: "error", tags: [], nonTech: false, error: error.message };
   }
 }
 

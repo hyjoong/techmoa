@@ -6,10 +6,12 @@ dotenv.config();
 // Firebase Admin SDK 초기화
 // Firebase Console에서 서비스 계정 키를 다운로드하여 사용
 // https://console.firebase.google.com/project/_/settings/serviceaccounts/adminsdk
-let firebaseInitialized = false;
+let firebaseApp = null;
+let cleanupPromise = null;
+const activeNotifications = new Set();
 
 function initializeFirebase() {
-  if (firebaseInitialized) return;
+  if (firebaseApp) return;
 
   try {
     // 환경 변수에서 Firebase 서비스 계정 키 읽기
@@ -22,15 +24,50 @@ function initializeFirebase() {
       return;
     }
 
-    admin.initializeApp({
+    firebaseApp = admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
 
-    firebaseInitialized = true;
     console.log("✅ Firebase Admin SDK 초기화 완료");
   } catch (error) {
     console.error("❌ Firebase 초기화 실패:", error.message);
   }
+}
+
+function trackNotification(operation) {
+  // 정리가 시작된 뒤 들어온 요청은 기존 앱 정리가 끝난 다음 실행한다.
+  if (cleanupPromise) {
+    return cleanupPromise.then(() => trackNotification(operation));
+  }
+  const pending = Promise.resolve().then(operation);
+  activeNotifications.add(pending);
+  pending.then(
+    () => activeNotifications.delete(pending),
+    () => activeNotifications.delete(pending),
+  );
+  return pending;
+}
+
+export function cleanupPushNotifications() {
+  if (cleanupPromise) return cleanupPromise;
+  const cleanup = (async () => {
+    // 전송 전체(개별·전체 토픽 포함)가 끝나기 전에는 SDK를 종료하지 않는다.
+    await Promise.allSettled([...activeNotifications]);
+    if (!firebaseApp) return;
+    const ownedApp = firebaseApp;
+    await ownedApp.delete();
+    firebaseApp = null;
+  })();
+  cleanupPromise = cleanup;
+  cleanup.then(
+    () => {
+      cleanupPromise = null;
+    },
+    () => {
+      cleanupPromise = null;
+    },
+  );
+  return cleanup;
 }
 
 // 즉시 알림을 보낼 인기 블로그 목록
@@ -56,12 +93,16 @@ const INSTANT_NOTIFICATION_BLOGS = [
  * @param {string} article.external_url - 원문 URL
  * @param {string} article.blog_type - 블로그 타입 (company/personal)
  */
-export async function sendInstantNotification(article) {
-  if (!firebaseInitialized) {
+export function sendInstantNotification(article) {
+  return trackNotification(() => performInstantNotification(article));
+}
+
+async function performInstantNotification(article) {
+  if (!firebaseApp) {
     initializeFirebase();
   }
 
-  if (!firebaseInitialized) {
+  if (!firebaseApp) {
     return { success: false, error: "Firebase not initialized" };
   }
 
@@ -106,11 +147,11 @@ export async function sendInstantNotification(article) {
       },
     };
 
-    await admin.messaging().send(message);
+    await admin.messaging(firebaseApp).send(message);
     console.log(`✅ [즉시 알림] ${article.author}: ${article.title}`);
 
     // 전체 구독자에게도 전송
-    await admin.messaging().send({
+    await admin.messaging(firebaseApp).send({
       ...message,
       topic: "all_blogs",
     });
@@ -126,12 +167,16 @@ export async function sendInstantNotification(article) {
  * 일일 요약 알림 전송 (배치 처리)
  * @param {Array} articles - 새로 추가된 글 목록
  */
-export async function sendDailySummaryNotification(articles) {
-  if (!firebaseInitialized) {
+export function sendDailySummaryNotification(articles) {
+  return trackNotification(() => performDailySummaryNotification(articles));
+}
+
+async function performDailySummaryNotification(articles) {
+  if (!firebaseApp) {
     initializeFirebase();
   }
 
-  if (!firebaseInitialized || articles.length === 0) {
+  if (!firebaseApp || articles.length === 0) {
     return { success: false, error: "No articles or Firebase not initialized" };
   }
 
@@ -177,7 +222,7 @@ export async function sendDailySummaryNotification(articles) {
         },
       },
       android: {
-        priority: "default",
+        priority: "normal",
         notification: {
           sound: "default",
           channelId: "daily_summary",
@@ -185,7 +230,7 @@ export async function sendDailySummaryNotification(articles) {
       },
     };
 
-    await admin.messaging().send(message);
+    await admin.messaging(firebaseApp).send(message);
     console.log(`✅ [일일 요약] ${totalCount}개 글, ${blogCount}개 블로그`);
 
     return { success: true, count: totalCount };
@@ -239,6 +284,3 @@ export async function sendBatchNotifications(allNewArticles) {
 
   return { success: true, skipped: true, count: 0 };
 }
-
-// 초기화
-initializeFirebase();

@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
+const DISCORD_REQUEST_TIMEOUT_MS = 15000;
 
 /**
  * Discord 웹훅으로 새 기술블로그 글 알림 전송
@@ -18,6 +19,12 @@ export async function sendDiscordNotification(newArticles) {
   if (!newArticles || newArticles.length === 0) {
     return { success: true, skipped: true, count: 0 };
   }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => {
+    controller.abort(new Error("Discord request timed out after 15000ms"));
+  }, DISCORD_REQUEST_TIMEOUT_MS);
+  timeout.unref?.();
 
   try {
     // 블로그별로 그룹화
@@ -59,13 +66,15 @@ export async function sendDiscordNotification(newArticles) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ embeds }),
+      signal: controller.signal,
     });
+    // 성공 응답도 끝까지 읽어 HTTP 연결이 재사용되거나 해제될 수 있게 한다.
+    const text = await response.text();
 
     if (response.ok) {
       console.log(`✅ Discord 알림 전송 완료 (${newArticles.length}개 글)`);
       return { success: true, count: newArticles.length };
     } else {
-      const text = await response.text();
       console.error(`❌ Discord 알림 전송 실패: ${response.status} ${text}`);
       return {
         success: false,
@@ -75,6 +84,8 @@ export async function sendDiscordNotification(newArticles) {
   } catch (error) {
     console.error("❌ Discord 알림 전송 중 오류:", error.message);
     return { success: false, error: error.message };
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

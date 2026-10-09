@@ -1,28 +1,18 @@
 // 썸네일 추출 관련 유틸 (RSS 크롤러 전용)
+import { fetchTextWithTimeout } from "./http.js";
 
 // 웹 페이지에서 Open Graph 이미지 추출 (토스, 올리브영 등)
 export async function fetchThumbnailFromWeb(url, blogName = "웹") {
   try {
-    const response = await fetch(url, {
+    const html = await fetchTextWithTimeout(url, {
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "User-Agent": "Techmoa RSS Reader (+https://techmoa.dev)",
       },
-      timeout: 10000,
     });
-
-    if (!response.ok) {
-      console.log(
-        `❌ [${blogName} 썸네일] HTTP 에러 ${response.status}: ${url}`
-      );
-      return null;
-    }
-
-    const html = await response.text();
 
     // Open Graph 이미지 추출
     const ogImageMatch = html.match(
-      /<meta[^>]+property="og:image"[^>]+content="([^"]+)"[^>]*>/i
+      /<meta[^>]+property="og:image"[^>]+content="([^"]+)"[^>]*>/i,
     );
     if (ogImageMatch && ogImageMatch[1]) {
       console.log(`✅ [${blogName} 썸네일] 웹에서 추출: ${ogImageMatch[1]}`);
@@ -31,11 +21,11 @@ export async function fetchThumbnailFromWeb(url, blogName = "웹") {
 
     // 다른 메타 이미지 태그들도 시도
     const twitterImageMatch = html.match(
-      /<meta[^>]+name="twitter:image"[^>]+content="([^"]+)"[^>]*>/i
+      /<meta[^>]+name="twitter:image"[^>]+content="([^"]+)"[^>]*>/i,
     );
     if (twitterImageMatch && twitterImageMatch[1]) {
       console.log(
-        `✅ [${blogName} 썸네일] 트위터 메타에서 추출: ${twitterImageMatch[1]}`
+        `✅ [${blogName} 썸네일] 트위터 메타에서 추출: ${twitterImageMatch[1]}`,
       );
       return twitterImageMatch[1];
     }
@@ -71,7 +61,7 @@ export async function extractThumbnail(item, feedConfig = null) {
         return webThumbnail;
       }
       console.log(
-        `⚠️ [${blog.name} 썸네일] 웹 스크래핑 실패, 일반 방식으로 시도`
+        `⚠️ [${blog.name} 썸네일] 웹 스크래핑 실패, 일반 방식으로 시도`,
       );
       break; // 해당 블로그 처리 후 루프 종료
     }
@@ -177,7 +167,7 @@ export async function extractThumbnail(item, feedConfig = null) {
 
   // 8. Open Graph 이미지 확인 (일부 블로그에서 사용)
   const ogImageMatch = content.match(
-    /<meta[^>]+property="og:image"[^>]+content="([^"]+)"[^>]*>/i
+    /<meta[^>]+property="og:image"[^>]+content="([^"]+)"[^>]*>/i,
   );
   if (ogImageMatch && ogImageMatch[1]) {
     return ogImageMatch[1];
