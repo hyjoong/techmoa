@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 5
     steps:
@@ -24,7 +24,7 @@ jobs:
         shell: bash
         run: |
           node --input-type=module <<'JS'
-          const paths = ['/feed/', '/?feed=rss2', '/feed/atom/', '/wp-json/wp/v2/posts?per_page=1', '/?rest_route=/wp/v2/posts&per_page=1'];
+          const paths = ['/feed/'];
           for (const path of paths) {
             try {
               const r = await fetch('https://techblog.woowahan.com' + path, {
@@ -33,6 +33,7 @@ jobs:
               });
               const body = await r.text();
               console.log(JSON.stringify({client:'node',path,status:r.status,type:r.headers.get('content-type'),mitigated:r.headers.get('cf-mitigated'),ray:r.headers.get('cf-ray'),bytes:body.length,sample:body.slice(0,150)}));
+              console.log(body.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0,3000));
             } catch(e) { console.log(JSON.stringify({client:'node',path,error:e.message})); }
           }
           JS
