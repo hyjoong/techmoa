@@ -1,0 +1,47 @@
+name: RSS access diagnostic
+
+on:
+  push:
+    branches: [codex/rss-access-fix]
+    paths: [.github/workflows/rss-access-probe.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Read public RSS endpoints (no credentials)
+        shell: bash
+        run: |
+          node --input-type=module <<'JS'
+          const paths = ['/feed/', '/?feed=rss2', '/feed/atom/', '/wp-json/wp/v2/posts?per_page=1', '/?rest_route=/wp/v2/posts&per_page=1'];
+          for (const path of paths) {
+            try {
+              const r = await fetch('https://techblog.woowahan.com' + path, {
+                headers: { 'User-Agent': 'Techmoa RSS Reader (+https://techmoa.dev)', Accept: 'application/rss+xml,application/atom+xml,application/xml,text/xml' },
+                signal: AbortSignal.timeout(10000),
+              });
+              const body = await r.text();
+              console.log(JSON.stringify({client:'node',path,status:r.status,type:r.headers.get('content-type'),mitigated:r.headers.get('cf-mitigated'),ray:r.headers.get('cf-ray'),bytes:body.length,sample:body.slice(0,150)}));
+            } catch(e) { console.log(JSON.stringify({client:'node',path,error:e.message})); }
+          }
+          JS
+          for ua in 'Techmoa RSS Reader (+https://techmoa.dev)' 'Mozilla/5.0'; do
+            curl --silent --show-error --max-time 15 --user-agent "$ua" \
+              --header 'Accept: application/rss+xml,application/atom+xml,application/xml,text/xml' \
+              --dump-header /tmp/feed-headers --output /tmp/feed.xml \
+              --write-out "curl agent=$ua status=%{http_code} http=%{http_version} bytes=%{size_download}\n" \
+              https://techblog.woowahan.com/feed/ || true
+            head -c 150 /tmp/feed.xml
+            echo
+          done
