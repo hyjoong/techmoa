@@ -18,8 +18,8 @@ function runLocalScenario(scenario) {
     const scenario = ${JSON.stringify(scenario)};
     const server = http.createServer((req, res) => {
       if (scenario === 'headers-timeout') return;
-      if (scenario === '403') {
-        res.writeHead(403, { 'Content-Type': 'text/plain' });
+      if (scenario === '403' || scenario === '503' || (scenario === 'redirect-403' && req.url === '/rss')) {
+        res.writeHead(scenario === '503' ? 503 : 403, { 'Content-Type': 'text/plain' });
         res.write('Forbidden');
         return;
       }
@@ -51,7 +51,7 @@ function runLocalScenario(scenario) {
       const feed = await new Parser().parseString(xml);
       console.log(JSON.stringify({ success: true, title: feed.title, elapsedMs: Date.now() - started }));
     } catch (error) {
-      console.log(JSON.stringify({ success: false, error: error.message, elapsedMs: Date.now() - started }));
+      console.log(JSON.stringify({ success: false, error: error.message, status: error.status, url: error.url, elapsedMs: Date.now() - started }));
     }
     // 의도적으로 process.exit(), agent.destroy(), server.close()를 호출하지 않는다.
     // 완료한 HTTP 작업만으로 프로세스가 종료되어야 한다.
@@ -106,11 +106,23 @@ for (const scenario of ["ok", "redirect"]) {
   });
 }
 
-for (const scenario of ["403", "redirect-limit"]) {
+for (const scenario of ["403", "503", "redirect-403", "redirect-limit"]) {
   test(`HTTP 오류·리다이렉트 응답을 정리하고 자연 종료한다 (${scenario})`, async () => {
     const result = await runLocalScenario(scenario);
     assert.equal(result.success, false);
-    assert.match(result.error, scenario === "403" ? /HTTP 403/ : /리다이렉트/);
+    if (scenario === "redirect-limit") {
+      assert.match(result.error, /리다이렉트/);
+    } else {
+      const status = scenario === "503" ? 503 : 403;
+      assert.equal(result.error, `HTTP ${status}`);
+      assert.equal(result.status, status);
+      const failedUrl = new URL(result.url);
+      assert.equal(failedUrl.hostname, "127.0.0.1");
+      assert.equal(
+        failedUrl.pathname,
+        scenario === "redirect-403" ? "/rss" : "/start",
+      );
+    }
   });
 }
 

@@ -18,6 +18,8 @@ export function renderCrawlSummary(report) {
   }
   const labels = {
     success: "완료",
+    partial_success: "완료 (일부 피드 수집 불가)",
+    blocked: "수집 불가",
     partial_failure: "일부 실패",
     failed: "실패",
     running: "실행 중 또는 중단됨",
@@ -42,9 +44,25 @@ export function renderCrawlSummary(report) {
     "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
   );
   for (const feed of report.feedResults) {
+    const status =
+      feed.status === "blocked" ? "수집 불가" : feed.success ? "성공" : "실패";
     lines.push(
-      `| ${escapeCell(feed.feed)} | ${feed.success ? "성공" : "실패"} | ${count(feed.processed)} | ${count(feed.inserted)} | ${count(feed.duplicates)} | ${count(feed.excluded)} | ${count(feed.candidates)} | ${count(feed.deferred)} | ${(count(feed.durationMs) / 1000).toFixed(1)}초 |`,
+      `| ${escapeCell(feed.feed)} | ${status} | ${count(feed.processed)} | ${count(feed.inserted)} | ${count(feed.duplicates)} | ${count(feed.excluded)} | ${count(feed.candidates)} | ${count(feed.deferred)} | ${(count(feed.durationMs) / 1000).toFixed(1)}초 |`,
     );
+  }
+  if (report.blockedFeeds?.length) {
+    lines.push(
+      "",
+      "### 수집 불가 피드",
+      "",
+      "| 블로그 | HTTP 상태 | 요청 주소 | 사유 |",
+      "| --- | --- | --- | --- |",
+    );
+    for (const blocked of report.blockedFeeds) {
+      lines.push(
+        `| ${escapeCell(blocked.feed)} | HTTP ${escapeCell(blocked.httpStatus)} | ${escapeCell(blocked.url)} | ${escapeCell(blocked.message)} |`,
+      );
+    }
   }
   if (report.errors?.length) {
     lines.push("", "### 오류", "");

@@ -31,6 +31,75 @@ test("실패와 새 글 0건, 미리보기와 저장을 실행 요약에서 구�
   assert.match(summary, /parse: HTTP 503/);
 });
 
+test("일부 또는 전체 수집 불가를 성공·실패와 구분하고 HTTP 사유를 표시한다", () => {
+  const blockedReason = {
+    httpStatus: 403,
+    url: "https://example.test/feed/",
+    message: "GitHub Actions 접근 차단",
+  };
+  const blockedFeed = {
+    feed: "차단 피드",
+    success: false,
+    status: "blocked",
+    blockedReason,
+  };
+  for (const status of ["partial_success", "blocked", "partial_failure"]) {
+    const summary = renderCrawlSummary({
+      schemaVersion: 1,
+      status,
+      blockedFeeds: [{ feed: blockedFeed.feed, ...blockedReason }],
+      feedResults: [
+        blockedFeed,
+        ...(status === "blocked"
+          ? []
+          : [{ feed: "정상 피드", success: true, status: "success" }]),
+      ],
+      errors:
+        status === "partial_failure"
+          ? [{ stage: "notification", message: "알림 전송 실패" }]
+          : [],
+    });
+    const label = {
+      partial_success: "완료 (일부 피드 수집 불가)",
+      blocked: "수집 불가",
+      partial_failure: "일부 실패",
+    }[status];
+    assert.ok(summary.includes(`상태: **${label}**`));
+    assert.match(summary, /차단 피드 \| 수집 불가/);
+    assert.doesNotMatch(summary, /차단 피드 \| (성공|실패)/);
+    assert.match(summary, /### 수집 불가 피드/);
+    assert.match(
+      summary,
+      /차단 피드 \| HTTP 403 \| https:\/\/example\.test\/feed\/ \| GitHub Actions 접근 차단/,
+    );
+    if (status === "partial_failure") {
+      assert.match(summary, /### 오류/);
+      assert.match(summary, /notification: 알림 전송 실패/);
+    } else {
+      assert.doesNotMatch(summary, /### 오류/);
+    }
+  }
+});
+
+test("수집 불가 상세 문자열도 실행 요약의 HTML이나 표를 바꾸지 않는다", () => {
+  const summary = renderCrawlSummary({
+    schemaVersion: 1,
+    status: "blocked",
+    feedResults: [{ feed: "A|B", success: false, status: "blocked" }],
+    blockedFeeds: [
+      {
+        feed: "A|B",
+        httpStatus: 403,
+        url: "https://example.test/<script>|rss",
+        message: "<img src=x> `token`\nHTTP 403",
+      },
+    ],
+  });
+  assert.doesNotMatch(summary, /<script>|<img|`token`/);
+  assert.match(summary, /A&#124;B/);
+  assert.match(summary, /&lt;script&gt;&#124;rss/);
+});
+
 test("피드 오류 문자열이 실행 요약의 HTML이나 표를 바꾸지 않는다", () => {
   const summary = renderCrawlSummary({
     schemaVersion: 1,

@@ -42,6 +42,9 @@ export const RSS_FEEDS = [
     name: "우아한형제들",
     url: "https://techblog.woowahan.com/feed/",
     type: "company",
+    // 2026-10-11 GitHub 호스팅 러너에서 사이트의 접근 차단 응답 확인.
+    // 요청은 계속 시도하며 이 환경의 403만 명시적인 수집 불가로 보고한다.
+    githubActionsBlockedStatuses: [403],
   },
   { name: "네이버", url: "https://d2.naver.com/d2.atom", type: "company" },
   {
