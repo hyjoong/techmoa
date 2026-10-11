@@ -77,20 +77,32 @@ jobs:
             }
 
             const validCount = results.filter(r => r.valid).length;
-            const invalidCount = results.filter(r => !r.valid).length;
+            const blockedFeeds = results.filter(r => r.blocked);
+            const invalidFeeds = results.filter(r => !r.valid && !r.blocked);
+            const invalidCount = invalidFeeds.length;
             const totalCount = results.length;
 
             let comment = `## 🔍 RSS 피드 유효성 검사 결과\n\n`;
             comment += `📊 **검사 결과**: ${validCount}/${totalCount}개 피드 유효\n\n`;
 
+            if (blockedFeeds.length > 0) {
+              comment += `⚠️ **수집 불가**: ${blockedFeeds.length}개\n`;
+              blockedFeeds.forEach(feed => {
+                comment += `- \`${feed.url}\`: ${feed.warning}\n`;
+              });
+              comment += `\n다음 실행에서 접근 가능 여부를 다시 확인합니다.\n\n`;
+            }
+
             if (invalidCount > 0) {
               comment += `❌ **유효하지 않은 피드**:\n`;
-              results.filter(r => !r.valid).forEach(feed => {
+              invalidFeeds.forEach(feed => {
                 comment += `- \`${feed.url}\`: ${feed.error}\n`;
               });
               comment += `\n⚠️ **수정이 필요합니다.**\n`;
-            } else {
+            } else if (blockedFeeds.length === 0) {
               comment += `✅ **모든 RSS 피드가 유효합니다!**\n`;
+            } else {
+              comment += `✅ **수집 불가로 표시한 피드를 제외한 나머지 피드는 유효합니다.**\n`;
             }
 
             comment += `\n---\n`;

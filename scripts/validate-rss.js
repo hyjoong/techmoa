@@ -13,6 +13,7 @@ import fs from "fs";
 import axios from "axios";
 import xml2js from "xml2js";
 import { RSS_FEEDS } from "./rss/feeds.js";
+import { getFeedAccessWarning } from "./rss/access-policy.js";
 
 // 커맨드 라인 인수 파싱
 const args = process.argv.slice(2);
@@ -138,10 +139,17 @@ async function validateRssFeed(url, retryCount = 0) {
       return validateRssFeed(url, retryCount + 1);
     }
 
+    const status = error.response?.status;
+    const warning = getFeedAccessWarning(
+      RSS_FEEDS.find((feed) => feed.url === url),
+      status,
+    );
     return {
       url,
       valid: false,
+      status,
       error: error.message,
+      ...(warning ? { blocked: true, warning } : {}),
     };
   }
 }
@@ -158,23 +166,12 @@ async function main() {
     } else {
       urls = extractRssUrls();
       console.log(`📊 총 ${urls.length}개의 RSS 피드를 검사합니다.\n`);
-
-      // GitHub Actions 환경에서 우아한형제들 RSS 피드 제외
-      if (process.env.GITHUB_ACTIONS) {
-        const originalCount = urls.length;
-        urls = urls.filter((url) => !url.includes("techblog.woowahan.com"));
-        const excludedCount = originalCount - urls.length;
-        if (excludedCount > 0) {
-          console.log(
-            `🔧 GitHub Actions 환경: 우아한형제들 RSS 피드 ${excludedCount}개 제외됨`
-          );
-        }
-      }
     }
 
     const results = [];
     let validCount = 0;
     let invalidCount = 0;
+    let blockedCount = 0;
 
     // 서로 다른 도메인이 대부분이라 청크 단위로 동시 검사 (429는 validateRssFeed 내부에서 재시도)
     const CONCURRENCY = urls.length > 1 ? 8 : 1;
@@ -198,6 +195,9 @@ async function main() {
               console.log(`   ⚠️  ${result.warning}`);
             }
           }
+        } else if (result.blocked) {
+          blockedCount++;
+          console.log(`⚠️ 수집 불가: ${result.url} - ${result.warning}`);
         } else {
           invalidCount++;
           console.log(`❌ ${result.url} - ${result.error}`);
@@ -207,10 +207,11 @@ async function main() {
 
     console.log("\n📊 검사 결과:");
     console.log(`✅ 유효한 피드: ${validCount}개`);
+    console.log(`⚠️ 수집 불가 피드: ${blockedCount}개`);
     console.log(`❌ 유효하지 않은 피드: ${invalidCount}개`);
 
     // 실패한 피드가 있으면 상세 정보 출력
-    const invalidFeeds = results.filter((r) => !r.valid);
+    const invalidFeeds = results.filter((r) => !r.valid && !r.blocked);
     if (invalidFeeds.length > 0) {
       console.log("\n❌ 유효하지 않은 피드 상세:");
       invalidFeeds.forEach((feed) => {
@@ -227,21 +228,19 @@ async function main() {
       "\n💾 검사 결과가 rss-validation-results.json에 저장되었습니다."
     );
 
-    // 실패한 피드가 있으면 에러로 종료 (단, 429 에러만 있는 경우는 성공으로 처리)
-    const non429Errors = invalidFeeds.filter(
-      (feed) => !feed.error.includes("429")
-    );
+    if (blockedCount > 0 && validCount === 0) {
+      console.log("\n❌ 수집 불가 피드가 있고 정상 확인된 피드가 없습니다.");
+      process.exit(1);
+    }
 
     if (invalidCount > 0) {
-      if (non429Errors.length === 0) {
-        console.log(
-          "\n⚠️  429 에러만 발생했습니다. 이는 일시적인 문제로 간주하여 성공으로 처리합니다."
-        );
-        process.exit(0);
-      } else {
-        console.log("\n❌ 일부 RSS 피드가 유효하지 않습니다.");
-        process.exit(1);
-      }
+      console.log("\n❌ 일부 RSS 피드가 유효하지 않습니다.");
+      process.exit(1);
+    } else if (blockedCount > 0) {
+      console.log(
+        "\n⚠️ 일부 피드는 수집 불가 상태입니다. 나머지 피드 검사는 정상 완료했습니다."
+      );
+      process.exit(0);
     } else {
       console.log("\n🎉 모든 RSS 피드가 유효합니다!");
       process.exit(0);

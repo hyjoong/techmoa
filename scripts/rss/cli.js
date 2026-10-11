@@ -13,7 +13,7 @@ export const RSS_CRAWLER_HELP = `사용법: pnpm crawl-rss [옵션]
   --help                 환경 설정 없이 도움말 표시
 
 날짜·개수 상한이 없으면 선택한 피드의 전체 대상 글을 처리합니다.
-종료 코드: 0 성공(새 글 0개 포함), 1 전체/일부 실패, 2 인자 오류.
+종료 코드: 0 완료(새 글 0개·일부 피드 수집 불가 포함), 1 오류 또는 전체 수집 불가, 2 인자 오류.
 `;
 
 function invalid(message) {
@@ -144,6 +144,7 @@ function initialResult(options) {
     totalSkippedByDate: 0,
     totalAiArticles: 0,
     feedResults: [],
+    blockedFeeds: [],
     errors: [],
     warnings: [],
   };
@@ -219,7 +220,7 @@ export async function runRssCli(args, dependencies = {}) {
     logger.log(
       `수집 결과: ${latest.status}, 새 글 ${latest.totalNewArticles ?? 0}개. 보고서: ${options.output}`,
     );
-    return latest.status === "success" ? 0 : 1;
+    return ["success", "partial_success"].includes(latest.status) ? 0 : 1;
   } catch (error) {
     const snapshot = error?.crawlResult ?? latest;
     const finishedAt = new Date().toISOString();

@@ -35,7 +35,10 @@ export async function fetchTextWithTimeout(
       }
       if (!response.ok) {
         await response.body?.cancel();
-        throw new Error(`HTTP ${response.status}`);
+        throw Object.assign(new Error(`HTTP ${response.status}`), {
+          status: response.status,
+          url: String(currentUrl),
+        });
       }
       return await response.text();
     }

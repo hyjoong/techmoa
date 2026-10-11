@@ -4,6 +4,8 @@ import { test } from "node:test";
 import vm from "node:vm";
 import ts from "typescript";
 import { isDuplicate, normalizeUrl } from "../scripts/rss/dedup.js";
+import { getFeedAccessWarning } from "../scripts/rss/access-policy.js";
+import { RSS_FEEDS } from "../scripts/rss/feeds.js";
 import {
   getExclusionReason,
   isNonTechClassification,
@@ -23,6 +25,7 @@ const nextFeed = {
 // 서비스 로직은 그대로 실행하고 RSS·DB·AI·알림·타이머만 격리한다.
 // 허용 목록 밖 모듈은 로드하지 않으므로 dotenv와 실제 클라이언트도 실행되지 않는다.
 function createHarness({
+  environment = {},
   parseError = null,
   transportError = null,
   insertError = null,
@@ -196,6 +199,10 @@ function createHarness({
         return url;
       },
     },
+    "../../scripts/rss/access-policy.js": {
+      getFeedAccessWarning: (feed, status) =>
+        getFeedAccessWarning(feed, status, environment),
+    },
     "../../scripts/rss/dedup.js": { normalizeUrl, isDuplicate },
     "../../scripts/rss/filter.js": {
       getExclusionReason,
@@ -234,7 +241,7 @@ function createHarness({
       }
       return mocks[name];
     },
-    process: { env: {} },
+    process: { env: environment },
     console: { log() {}, warn() {}, error() {} },
     setTimeout(callback, delay) {
       calls.delays.push(delay);
@@ -430,6 +437,123 @@ function item(id, date = "2026-10-04T03:00:00Z", title = `기술 글 ${id}`) {
     contentSnippet: "테스트 본문",
   };
 }
+
+test("HTTP 차단은 실제 상태 코드와 실패 주소를 남기고 후속 피드를 처리한다", async () => {
+  const deniedUrl = "https://example.com/redirected-feed";
+  const harness = createHarness({
+    transportError: (url) =>
+      url === popularFeed.url
+        ? Object.assign(new Error("HTTP 403"), { status: 403, url: deniedUrl })
+        : null,
+  });
+  const report = await harness.runRssCrawl({
+    supabase: harness.supabase,
+    dryRun: true,
+  });
+  assert.equal(report.status, "partial_failure");
+  assert.equal(report.errors.length, 1);
+  assert.equal(report.errors[0].httpStatus, 403);
+  assert.equal(report.errors[0].url, deniedUrl);
+  assert.equal(report.feedResults[0].errors[0].httpStatus, 403);
+  assert.equal(report.feedResults[1].success, true);
+});
+
+const restrictedFeed = RSS_FEEDS.find((feed) => feed.name === "우아한형제들");
+
+test("확인된 GitHub 접근 차단만 수집 불가로 남기고 정상 피드는 처리한다", async () => {
+  let denied = true;
+  const harness = createHarness({
+    environment: { GITHUB_ACTIONS: "true" },
+    transportError: (url) =>
+      denied && url === restrictedFeed.url
+        ? Object.assign(new Error("HTTP 403"), { status: 403, url })
+        : null,
+  });
+  const options = {
+    feeds: [restrictedFeed, nextFeed],
+    supabase: harness.supabase,
+    dryRun: true,
+  };
+  const report = await harness.runRssCrawl(options);
+  assert.equal(report.status, "partial_success");
+  assert.equal(report.errors.length, 0);
+  assert.equal(report.blockedFeeds.length, 1);
+  assert.equal(report.blockedFeeds[0].httpStatus, 403);
+  assert.equal(report.blockedFeeds[0].url, restrictedFeed.url);
+  assert.equal(report.feedResults[0].status, "blocked");
+  assert.equal(report.feedResults[0].success, false);
+  assert.equal(report.feedResults[0].processed, 0);
+  assert.equal(report.feedResults[1].success, true);
+  assert.match(report.warnings.join(" "), /수집할 수 없습니다/);
+  assert.equal(harness.calls.exclusions.length, 0);
+
+  denied = false;
+  const recovered = await harness.runRssCrawl(options);
+  assert.equal(recovered.status, "success");
+  assert.equal(recovered.blockedFeeds.length, 0);
+  assert.equal(recovered.feedResults[0].success, true);
+  assert.equal(
+    harness.calls.http.filter(({ url }) => url === restrictedFeed.url).length,
+    2,
+  );
+});
+
+test("선택한 피드가 모두 차단되면 완료로 보고하지 않는다", async () => {
+  const harness = createHarness({
+    environment: { GITHUB_ACTIONS: "true" },
+    transportError: Object.assign(new Error("HTTP 403"), { status: 403 }),
+  });
+  const report = await harness.runRssCrawl({
+    feeds: [restrictedFeed],
+    supabase: harness.supabase,
+    dryRun: true,
+  });
+  assert.equal(report.status, "blocked");
+  assert.equal(report.feedResults[0].success, false);
+});
+
+for (const [feed, environment, status] of [
+  [restrictedFeed, {}, 403],
+  [restrictedFeed, { GITHUB_ACTIONS: "true" }, 503],
+  [popularFeed, { GITHUB_ACTIONS: "true" }, 403],
+]) {
+  test(`확인되지 않은 오류는 계속 실패로 보고한다 (${feed.name}, ${environment.GITHUB_ACTIONS || "local"}, ${status})`, async () => {
+    const harness = createHarness({
+      environment,
+      transportError: (url) =>
+        url === feed.url
+          ? Object.assign(new Error(`HTTP ${status}`), { status, url })
+          : null,
+    });
+    const report = await harness.runRssCrawl({
+      feeds: [feed, nextFeed],
+      supabase: harness.supabase,
+      dryRun: true,
+    });
+    assert.equal(report.status, "partial_failure");
+    assert.equal(report.blockedFeeds.length, 0);
+    assert.equal(report.errors[0].httpStatus, status);
+  });
+}
+
+test("알려진 차단이 다른 피드의 실제 실패를 가리지 않는다", async () => {
+  const harness = createHarness({
+    environment: { GITHUB_ACTIONS: "true" },
+    transportError: (url) =>
+      url === nextFeed.url
+        ? null
+        : Object.assign(new Error("HTTP 403"), { status: 403, url }),
+  });
+  const report = await harness.runRssCrawl({
+    feeds: [restrictedFeed, popularFeed, nextFeed],
+    supabase: harness.supabase,
+    dryRun: true,
+  });
+  assert.equal(report.status, "partial_failure");
+  assert.equal(report.blockedFeeds.length, 1);
+  assert.equal(report.errors.length, 1);
+  assert.equal(report.errors[0].feed, popularFeed.name);
+});
 
 test("dry-run은 후보를 계산하지만 AI·DB 쓰기·썸네일·알림 모듈을 실행하지 않는다", async () => {
   const harness = createHarness({

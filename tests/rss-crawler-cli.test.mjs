@@ -301,6 +301,52 @@ test("시작·피드 완료·종료 보고서를 저장하고 새 글 0개 성�
   }
 });
 
+test("일부 수집 불가는 종료 코드 0이며 전체 수집 불가나 별도 오류는 1로 남긴다", async () => {
+  const blockedReason = {
+    httpStatus: 403,
+    url: "https://example.test/blocked/rss",
+    message: "실행 환경에서 접근이 차단되었습니다.",
+  };
+  const blockedFeed = {
+    feed: "수집 불가 피드",
+    success: false,
+    status: "blocked",
+    blockedReason,
+    errors: [],
+    warnings: [blockedReason.message],
+  };
+  const blockedFeeds = [{ feed: blockedFeed.feed, ...blockedReason }];
+  for (const status of ["partial_success", "blocked", "partial_failure"]) {
+    const feedResults =
+      status === "blocked"
+        ? [blockedFeed]
+        : [
+            blockedFeed,
+            { feed: "정상 피드", success: true, status: "success" },
+          ];
+    const errors =
+      status === "partial_failure"
+        ? [{ stage: "notification", message: "알림 전송 실패" }]
+        : [];
+    const { calls, dependencies } = harness({
+      service: async (options) => {
+        await options.onProgress({ blockedFeeds, feedResults });
+        return { status, blockedFeeds, feedResults, errors };
+      },
+    });
+    assert.equal(
+      await runRssCli([], dependencies),
+      status === "partial_success" ? 0 : 1,
+    );
+    assert.deepEqual(calls.reports[0].result.blockedFeeds, []);
+    const report = calls.reports.at(-1).result;
+    assert.equal(report.status, status);
+    assert.deepEqual(report.blockedFeeds, blockedFeeds);
+    assert.deepEqual(report.feedResults[0], blockedFeed);
+    assert.deepEqual(report.errors, errors);
+  }
+});
+
 test("중간 예외는 성공한 피드 결과를 보존하고 SDK 오류·JSON의 설정값을 마스킹한다", async () => {
   const secret = "synthetic-service-key";
   const { calls, dependencies } = harness({
