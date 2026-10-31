@@ -214,18 +214,19 @@ export const RSS_FEEDS = [
     category: "FE",
   },
   // BE
-  {
-    name: "향로",
-    url: "https://jojoldu.tistory.com/rss",
-    type: "personal",
-    category: "BE",
-  },
-  {
-    name: "망나니개발자",
-    url: "https://mangkyu.tistory.com/rss",
-    type: "personal",
-    category: "BE",
-  },
+  // 2026-10-29부터 티스토리가 약관 위반으로 블로그 접근 제한(HTTP 451). 해제되면 복구.
+  // {
+  //   name: "향로",
+  //   url: "https://jojoldu.tistory.com/rss",
+  //   type: "personal",
+  //   category: "BE",
+  // },
+  // {
+  //   name: "망나니개발자",
+  //   url: "https://mangkyu.tistory.com/rss",
+  //   type: "personal",
+  //   category: "BE",
+  // },
   {
     name: "서대영",
     url: "https://www.daleseo.com/rss.xml",
