@@ -6,12 +6,8 @@ import { useBookmarks } from "@/components/bookmark-provider";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
 import { Bookmark } from "lucide-react";
-import {
-  addBookmark,
-  removeBookmark,
-  isBookmarked as checkIsBookmarked,
-} from "@/lib/bookmarks";
-import { isFlutterWebView } from "@/lib/webview-bridge";
+import { addBookmark, removeBookmark } from "@/lib/bookmarks";
+import { checkBookmarkInApp, isFlutterWebView } from "@/lib/webview-bridge";
 
 interface BookmarkButtonProps {
   blogId: number;
@@ -40,9 +36,9 @@ export function BookmarkButton({
   useEffect(() => {
     let active = true;
     if (isApp)
-      void checkIsBookmarked(blogId)
-        .then((value) => {
-          if (active) setAppBookmarked(value);
+      void checkBookmarkInApp(String(blogId))
+        .then((response) => {
+          if (active) setAppBookmarked(response.isBookmarked);
         })
         .catch(() => {
           if (active) setAppBookmarked(false);

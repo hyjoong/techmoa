@@ -35,6 +35,7 @@ export function BookmarkProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
     activeUserRef.current = userId;
     setState(null);
     setError(null);
@@ -43,7 +44,7 @@ export function BookmarkProvider({ children }: PropsWithChildren) {
       return;
     }
     setLoading(true);
-    void getUserBookmarks()
+    void getUserBookmarks(controller.signal)
       .then(({ bookmarks, error: bookmarkError }) => {
         if (!active) return;
         if (bookmarkError) throw new Error(bookmarkError.message);
@@ -60,6 +61,7 @@ export function BookmarkProvider({ children }: PropsWithChildren) {
       });
     return () => {
       active = false;
+      controller.abort();
     };
   }, [userId, retryCount]);
 

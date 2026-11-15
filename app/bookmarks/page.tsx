@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
 import { getBookmarkedBlogs, type BookmarkedBlog } from "@/lib/bookmarks";
 import { BlogCard } from "@/components/blog-card";
 import { BlogListItem } from "@/components/blog-list-item";
@@ -12,31 +12,54 @@ import { Bookmark, BookOpen, Grid3X3, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
+interface BookmarksHeaderProps {
+  total?: number;
+}
+
+// 세 화면(인증 로딩·비로그인·목록)이 같은 헤더를 공유한다.
+function BookmarksHeader({ total }: BookmarksHeaderProps) {
+  return (
+    <div className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-900/60 border-b border-slate-200/50 dark:border-slate-700/50">
+      <div className="container mx-auto px-4 py-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              aria-label="Techmoa 홈으로 이동"
+              className="hover:opacity-80 transition-opacity"
+            >
+              <h1 className="text-2xl font-black text-blue-600 dark:text-blue-400">
+                Techmoa
+              </h1>
+            </Link>
+            <div className="flex items-center gap-2">
+              <Bookmark className="h-5 w-5 text-yellow-500" />
+              <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                북마크
+              </span>
+            </div>
+          </div>
+          {total !== undefined && (
+            <div className="text-sm text-slate-600 dark:text-slate-400">
+              총 {total}개
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function BookmarksPage() {
-  const { isAuthenticated, loading: authLoading } = useAuth();
-  const { toast } = useToast();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const userId = user?.id;
   const [bookmarkedBlogs, setBookmarkedBlogs] = useState<BookmarkedBlog[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
+  const [requestLoading, setRequestLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   const [viewMode, setViewMode] = useState<"card" | "list">("card");
   const [searchQuery, setSearchQuery] = useState("");
-
-  // 북마크된 블로그 가져오기
-  const fetchBookmarkedBlogs = async () => {
-    try {
-      const { blogs, error } = await getBookmarkedBlogs();
-      if (error) throw error;
-      setBookmarkedBlogs(blogs || []);
-    } catch (error: any) {
-      console.error("북마크된 블로그 가져오기 실패:", error);
-      toast({
-        title: "오류",
-        description: "북마크된 글을 가져오는데 실패했습니다.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // 북마크 제거 시 목록에서 제거
   const handleBookmarkRemoved = (blogId: number) => {
@@ -44,22 +67,48 @@ export default function BookmarksPage() {
   };
 
   useEffect(() => {
-    // 인증 상태가 로딩 중이면 스켈레톤 표시
-    if (authLoading) {
-      setLoading(true);
+    const controller = new AbortController();
+    let active = true;
+    setBookmarkedBlogs([]);
+    setLoadError(null);
+    setLoadedUserId(null);
+    if (authLoading || !userId) {
+      setRequestLoading(authLoading);
       return;
     }
+    setRequestLoading(true);
+    void getBookmarkedBlogs(controller.signal)
+      .then(({ blogs, error }) => {
+        if (!active) return;
+        setLoadedUserId(userId);
+        if (error) {
+          setLoadError(error.message);
+          return;
+        }
+        setBookmarkedBlogs(blogs);
+      })
+      .catch(() => {
+        if (!active) return;
+        setLoadedUserId(userId);
+        setLoadError("북마크된 글을 가져오지 못했습니다. 다시 시도해주세요.");
+      })
+      .finally(() => {
+        if (active) setRequestLoading(false);
+      });
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [userId, authLoading, retryCount]);
 
-    if (isAuthenticated) {
-      setLoading(true);
-      fetchBookmarkedBlogs();
-    } else {
-      setLoading(false);
-    }
-  }, [isAuthenticated, authLoading]);
+  // 계정이 바뀐 첫 렌더에서도 이전 계정의 글과 오류를 표시하지 않는다.
+  const loading =
+    authLoading || requestLoading || (!!userId && loadedUserId !== userId);
+  const visibleBlogs = loadedUserId === userId ? bookmarkedBlogs : [];
+  const visibleError = loadedUserId === userId ? loadError : null;
 
   // 필터링된 블로그 목록 (검색만)
-  const filteredBlogs = bookmarkedBlogs.filter((blog) => {
+  const filteredBlogs = visibleBlogs.filter((blog) => {
     const matchesSearch =
       blog.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       blog.summary?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -80,27 +129,7 @@ export default function BookmarksPage() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
-        <div className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-900/60 border-b border-slate-200/50 dark:border-slate-700/50">
-          <div className="container mx-auto px-4 py-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <button className="hover:opacity-80 transition-opacity">
-                  <a href="/">
-                    <h1 className="text-2xl font-black text-blue-600 dark:text-blue-400">
-                      Techmoa
-                    </h1>
-                  </a>
-                </button>
-                <div className="flex items-center gap-2">
-                  <Bookmark className="h-5 w-5 text-yellow-500" />
-                  <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                    북마크
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <BookmarksHeader />
         <div className="container mx-auto px-4 py-6">
           <BookmarkSkeleton viewMode={viewMode} count={6} />
         </div>
@@ -112,25 +141,7 @@ export default function BookmarksPage() {
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
-        <div className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-900/60 border-b border-slate-200/50 dark:border-slate-700/50">
-          <div className="container mx-auto px-4 py-3">
-            <div className="flex items-center gap-3">
-              <button className="hover:opacity-80 transition-opacity">
-                <a href="/">
-                  <h1 className="text-2xl font-black text-blue-600 dark:text-blue-400">
-                    Techmoa
-                  </h1>
-                </a>
-              </button>
-              <div className="flex items-center gap-2">
-                <Bookmark className="h-5 w-5 text-yellow-500" />
-                <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                  북마크
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        <BookmarksHeader />
         <div className="container mx-auto px-4 py-8">
           <Card className="max-w-md mx-auto">
             <CardContent className="p-8 text-center">
@@ -140,7 +151,7 @@ export default function BookmarksPage() {
                 로그인하여 북마크한 글들을 확인하세요.
               </p>
               <Button asChild>
-                <a href="/">홈으로 돌아가기</a>
+                <Link href="/">홈으로 돌아가기</Link>
               </Button>
             </CardContent>
           </Card>
@@ -151,31 +162,7 @@ export default function BookmarksPage() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* 헤더 */}
-      <div className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-slate-900/60 border-b border-slate-200/50 dark:border-slate-700/50">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <button className="hover:opacity-80 transition-opacity">
-                <a href="/">
-                  <h1 className="text-2xl font-black text-blue-600 dark:text-blue-400">
-                    Techmoa
-                  </h1>
-                </a>
-              </button>
-              <div className="flex items-center gap-2">
-                <Bookmark className="h-5 w-5 text-yellow-500" />
-                <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                  북마크
-                </span>
-              </div>
-            </div>
-            <div className="text-sm text-slate-600 dark:text-slate-400">
-              총 {sortedBlogs.length}개
-            </div>
-          </div>
-        </div>
-      </div>
+      <BookmarksHeader total={visibleBlogs.length} />
 
       <div className="container mx-auto px-4 py-6">
         {/* 컨트롤 바 */}
@@ -216,8 +203,34 @@ export default function BookmarksPage() {
           </div>
         )}
 
-        {/* 북마크된 글 목록 */}
-        {!loading && sortedBlogs.length === 0 && (
+        {!loading && visibleError && (
+          <Card className="text-center py-12">
+            <CardContent>
+              <p role="alert" className="text-slate-600 mb-4">
+                {visibleError}
+              </p>
+              <Button onClick={() => setRetryCount((value) => value + 1)}>
+                다시 시도
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {!loading &&
+          !visibleError &&
+          visibleBlogs.length > 0 &&
+          sortedBlogs.length === 0 && (
+            <Card className="text-center py-12">
+              <CardContent>
+                <p className="text-slate-600">
+                  &lsquo;{searchQuery}&rsquo;에 해당하는 북마크가 없습니다.
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+        {/* 북마크가 하나도 없는 경우 */}
+        {!loading && !visibleError && visibleBlogs.length === 0 && (
           <Card className="text-center py-12">
             <CardContent>
               <Bookmark className="h-16 w-16 mx-auto mb-4 text-slate-300" />
@@ -228,7 +241,7 @@ export default function BookmarksPage() {
                 관심 있는 글에 북마크를 추가해보세요.
               </p>
               <Button asChild>
-                <a href="/">홈으로 돌아가기</a>
+                <Link href="/">홈으로 돌아가기</Link>
               </Button>
             </CardContent>
           </Card>
@@ -258,7 +271,7 @@ export default function BookmarksPage() {
                   onLoginClick={() => {}} // 북마크 페이지에서는 로그인 모달이 필요 없음
                   onBookmarkRemoved={() => handleBookmarkRemoved(blog.id)}
                 />
-              )
+              ),
             )}
           </div>
         )}

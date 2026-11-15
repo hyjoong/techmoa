@@ -81,6 +81,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",

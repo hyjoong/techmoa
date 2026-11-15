@@ -5,9 +5,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/api/", "/admin/", "/_next/", "/scripts/"],
+      disallow: ["/api/", "/admin/", "/scripts/"],
     },
     sitemap: "https://techmoa.dev/sitemap.xml",
-    host: "https://techmoa.dev",
   };
 }

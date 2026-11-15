@@ -4,44 +4,120 @@ import {
   isFlutterWebView,
   saveBookmarkToApp,
   removeBookmarkFromApp,
-  checkBookmarkInApp,
 } from "./webview-bridge";
 import type { BookmarkPayload } from "./types/webview";
 
-// 북마크 타입 정의
-export interface Bookmark {
-  id: string;
-  user_id: string;
-  blog_id: number;
-  created_at: string;
+import type {
+  Bookmark,
+  BookmarkError,
+  BookmarkResponse,
+  BookmarkListResponse,
+  BookmarkedBlogsResponse,
+  BookmarkPage,
+  BookmarkIdsPage,
+} from "./types/bookmarks";
+export type {
+  Bookmark,
+  BookmarkedBlog,
+  BookmarkError,
+  BookmarkResponse,
+  BookmarkListResponse,
+  BookmarkedBlogsResponse,
+} from "./types/bookmarks";
+
+type RequestContext = {
+  accessToken: string;
+  userId: string;
+  signal?: AbortSignal;
+};
+
+class BookmarkRequestError extends Error {
+  constructor(
+    message: string,
+    readonly code: string,
+  ) {
+    super(message);
+  }
 }
 
-// 북마크된 블로그 타입 (북마크 정보 + 블로그 정보)
-export interface BookmarkedBlog extends Blog {
-  bookmark_id: string;
-  bookmark_created_at: string;
+async function createRequestContext(
+  signal?: AbortSignal,
+): Promise<RequestContext> {
+  const { data, error } = await supabase.auth.getSession();
+  if (error || !data.session) {
+    throw new BookmarkRequestError("로그인이 필요합니다.", "UNAUTHORIZED");
+  }
+  return {
+    accessToken: data.session.access_token,
+    userId: data.session.user.id,
+    signal,
+  };
 }
 
-// 에러 타입 정의
-export interface BookmarkError {
-  message: string;
-  code?: string;
+async function requestBookmarkApi<T>(
+  path: string,
+  context: RequestContext,
+  method: "GET" | "PUT" | "DELETE" = "GET",
+): Promise<T> {
+  const response = await fetch(`/api/me/bookmarks${path}`, {
+    method,
+    headers: { Authorization: `Bearer ${context.accessToken}` },
+    cache: "no-store",
+    credentials: "omit",
+    signal: context.signal,
+  });
+  // 여러 페이지를 읽는 도중 계정이 바뀌면 서로 다른 사용자의 결과를 섞지 않는다.
+  const { data, error } = await supabase.auth.getSession();
+  if (error || data.session?.user.id !== context.userId) {
+    throw new BookmarkRequestError(
+      "로그인 정보가 변경되었습니다.",
+      "SESSION_CHANGED",
+    );
+  }
+  if (!response.ok) {
+    const body: unknown = await response.json().catch(() => null);
+    const apiError =
+      body && typeof body === "object" && "error" in body ? body.error : null;
+    const message =
+      apiError &&
+      typeof apiError === "object" &&
+      "message" in apiError &&
+      typeof apiError.message === "string"
+        ? apiError.message
+        : "북마크 요청에 실패했습니다. 다시 시도해주세요.";
+    const code =
+      apiError &&
+      typeof apiError === "object" &&
+      "code" in apiError &&
+      typeof apiError.code === "string"
+        ? apiError.code
+        : "REQUEST_FAILED";
+    throw new BookmarkRequestError(message, code);
+  }
+  if (response.status === 204) return undefined as T;
+  return response.json() as Promise<T>;
 }
 
-// API 응답 타입들
-export interface BookmarkResponse {
-  bookmark: Bookmark | null;
-  error: BookmarkError | null;
+function toBookmarkError(error: unknown): BookmarkError {
+  if (error instanceof BookmarkRequestError) {
+    return { message: error.message, code: error.code };
+  }
+  return {
+    message: "북마크 요청에 실패했습니다. 다시 시도해주세요.",
+    code: "REQUEST_FAILED",
+  };
 }
 
-export interface BookmarkListResponse {
-  bookmarks: Bookmark[];
-  error: BookmarkError | null;
-}
-
-export interface BookmarkedBlogsResponse {
-  blogs: BookmarkedBlog[];
-  error: BookmarkError | null;
+function validateNextOffset(nextOffset: number | null, offset: number): void {
+  if (
+    nextOffset !== null &&
+    (!Number.isSafeInteger(nextOffset) || nextOffset <= offset)
+  ) {
+    throw new BookmarkRequestError(
+      "북마크 목록을 불러오지 못했습니다.",
+      "INVALID_RESPONSE",
+    );
+  }
 }
 
 /**
@@ -107,28 +183,17 @@ export async function addBookmark(blogId: number): Promise<BookmarkResponse> {
     }
   }
 
-  // 웹 브라우저 환경: Supabase 사용
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return {
-      bookmark: null,
-      error: { message: "로그인이 필요합니다." },
-    };
+  try {
+    const context = await createRequestContext();
+    const { bookmark } = await requestBookmarkApi<{ bookmark: Bookmark }>(
+      `/${blogId}`,
+      context,
+      "PUT",
+    );
+    return { bookmark, error: null };
+  } catch (error: unknown) {
+    return { bookmark: null, error: toBookmarkError(error) };
   }
-
-  const { data, error } = await supabase
-    .from("bookmarks")
-    .insert([{ user_id: user.id, blog_id: blogId }])
-    .select()
-    .single();
-
-  return {
-    bookmark: data,
-    error: error ? { message: error.message, code: error.code } : null,
-  };
 }
 
 // 북마크 제거
@@ -145,134 +210,62 @@ export async function removeBookmark(
     }
   }
 
-  // 웹 브라우저 환경: Supabase 사용
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return {
-      error: { message: "로그인이 필요합니다." },
-    };
+  try {
+    const context = await createRequestContext();
+    await requestBookmarkApi<void>(`/${blogId}`, context, "DELETE");
+    return { error: null };
+  } catch (error: unknown) {
+    return { error: toBookmarkError(error) };
   }
-
-  const { error } = await supabase
-    .from("bookmarks")
-    .delete()
-    .eq("user_id", user.id)
-    .eq("blog_id", blogId);
-
-  return {
-    error: error ? { message: error.message, code: error.code } : null,
-  };
 }
 
-// 북마크 상태 확인
-export async function isBookmarked(blogId: number): Promise<boolean> {
-  // Flutter 웹뷰 환경: 앱으로 메시지 전송
-  if (isFlutterWebView()) {
-    const response = await checkBookmarkInApp(String(blogId));
-    return response.isBookmarked;
+// 카드마다 요청하지 않고 로그인한 사용자의 북마크 ID를 함께 가져온다.
+export async function getUserBookmarks(
+  signal?: AbortSignal,
+): Promise<BookmarkListResponse> {
+  try {
+    const context = await createRequestContext(signal);
+    const ids = new Set<number>();
+    let offset = 0;
+    while (true) {
+      const page = await requestBookmarkApi<BookmarkIdsPage>(
+        `/ids?offset=${offset}&limit=1000`,
+        context,
+      );
+      page.ids.forEach((id) => ids.add(id));
+      validateNextOffset(page.nextOffset, offset);
+      if (page.nextOffset === null) break;
+      offset = page.nextOffset;
+    }
+    return {
+      bookmarks: Array.from(ids, (blog_id) => ({ blog_id })),
+      error: null,
+    };
+  } catch (error: unknown) {
+    return { bookmarks: [], error: toBookmarkError(error) };
   }
-
-  // 웹 브라우저 환경: Supabase 사용
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return false;
-  }
-
-  const { data, error } = await supabase
-    .from("bookmarks")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("blog_id", blogId)
-    .single();
-
-  return !error && !!data;
 }
 
-// 사용자의 모든 북마크 가져오기
-export async function getUserBookmarks(): Promise<BookmarkListResponse> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return {
-      bookmarks: [],
-      error: { message: "로그인이 필요합니다." },
-    };
+// 검색과 정렬이 전체 북마크에 적용되도록 서버의 제한된 페이지를 끝까지 읽는다.
+export async function getBookmarkedBlogs(
+  signal?: AbortSignal,
+): Promise<BookmarkedBlogsResponse> {
+  try {
+    const context = await createRequestContext(signal);
+    const blogs = new Map<number, BookmarkPage["blogs"][number]>();
+    let offset = 0;
+    while (true) {
+      const page = await requestBookmarkApi<BookmarkPage>(
+        `?offset=${offset}&limit=100`,
+        context,
+      );
+      page.blogs.forEach((blog) => blogs.set(blog.id, blog));
+      validateNextOffset(page.nextOffset, offset);
+      if (page.nextOffset === null) break;
+      offset = page.nextOffset;
+    }
+    return { blogs: Array.from(blogs.values()), error: null };
+  } catch (error: unknown) {
+    return { blogs: [], error: toBookmarkError(error) };
   }
-
-  const bookmarks: Bookmark[] = [];
-  const pageSize = 1000;
-  for (let offset = 0; ; offset += pageSize) {
-    const { data, error } = await supabase
-      .from("bookmarks")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("id")
-      .range(offset, offset + pageSize - 1);
-    if (error)
-      return {
-        bookmarks: [],
-        error: { message: error.message, code: error.code },
-      };
-    bookmarks.push(...(data || []));
-    if (!data || data.length < pageSize) break;
-  }
-  return { bookmarks, error: null };
-}
-
-// 북마크된 블로그 목록 가져오기 (블로그 정보 포함)
-export async function getBookmarkedBlogs(): Promise<BookmarkedBlogsResponse> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return {
-      blogs: [],
-      error: { message: "로그인이 필요합니다." },
-    };
-  }
-
-  const { data, error } = await supabase
-    .from("bookmarks")
-    .select(
-      `
-      id,
-      created_at,
-      blogs (*)
-    `,
-    )
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    return {
-      blogs: [],
-      error: { message: error.message, code: error.code },
-    };
-  }
-
-  // 북마크 정보와 블로그 정보를 합쳐서 반환
-  const bookmarkedBlogs = (data || [])
-    .map((item) => {
-      const blog = item.blogs as unknown as Blog;
-      return {
-        ...blog,
-        bookmark_id: item.id,
-        bookmark_created_at: item.created_at,
-      };
-    })
-    .filter((blog) => blog !== null);
-
-  return {
-    blogs: bookmarkedBlogs as BookmarkedBlog[],
-    error: null,
-  };
 }
