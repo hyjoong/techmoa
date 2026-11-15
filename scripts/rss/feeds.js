@@ -150,6 +150,31 @@ export const RSS_FEEDS = [
     url: "https://tech.hancom.com/feed/",
     type: "company",
   },
+  {
+    name: "삼성전자",
+    url: "https://techblog.samsung.com/rss",
+    type: "company",
+  },
+  {
+    name: "flex",
+    url: "https://flex.team/blog/category/tech/rss.xml",
+    type: "company",
+  },
+  {
+    name: "버즈빌",
+    url: "https://tech.buzzvil.com/feed.xml",
+    type: "company",
+  },
+  {
+    name: "카카오뱅크",
+    url: "https://tech.kakaobank.com/index.xml",
+    type: "company",
+  },
+  {
+    name: "여기어때",
+    url: "https://techblog.gccompany.co.kr/feed",
+    type: "company",
+  },
 
   // 개인 블로그
   // FE

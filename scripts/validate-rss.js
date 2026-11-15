@@ -52,6 +52,9 @@ async function validateRssFeed(url, retryCount = 0) {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        // axios 기본값(application/json)이면 JSON으로 응답하는 사이트가 있어 크롤러와 같은 값을 보낸다.
+        Accept:
+          "application/rss+xml,application/atom+xml,application/xml,text/xml",
       },
     });
 

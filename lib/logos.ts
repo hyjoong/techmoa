@@ -32,6 +32,10 @@ export const logoMap: Record<string, string> = {
   "NHN Cloud": "/logos/nhncloud.ico",
   하이퍼엑셀: "/logos/hyperaccel.png",
   한글과컴퓨터: "/logos/hancom-company.ico",
+  삼성전자: "/logos/samsung.ico",
+  flex: "/logos/flex.png",
+  버즈빌: "/logos/buzzvil.png",
+  카카오뱅크: "/logos/kakaobank.png",
 };
 
 // 로고 URL을 가져오는 헬퍼 함수
