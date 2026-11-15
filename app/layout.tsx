@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/auth/auth-provider";
@@ -8,6 +8,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
+  // OG·트위터 이미지의 상대 경로를 운영 도메인 기준 절대 URL로 만든다.
+  metadataBase: new URL("https://techmoa.dev"),
   title: {
     default: "Techmoa - 기술 블로그 모음집",
     template: "%s | Techmoa",
@@ -67,17 +69,18 @@ export const metadata: Metadata = {
       "국내외 IT·개발 기술 블로그의 최신 포스트를 Techmoa에서 한눈에 확인하세요.",
     images: ["/ogImage.png"],
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-  },
   verification: {
     other: {
       "naver-site-verification": "8b48897b4d8eb63c4a776125be8b5c429fcabb1f",
     },
   },
   manifest: "/manifest.json",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({
