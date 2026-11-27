@@ -47,7 +47,7 @@ TAG_BACKFILL_LIMIT=100 pnpm backfill-tags
 
 ## AI 태그 생성 동작 (scripts/ai-tags.js)
 
-- 모델: `FIREWORKS_MODEL` env (기본 `accounts/fireworks/models/gpt-oss-120b`). Actions에서는 같은 이름의 Repository variable로 변경할 수 있다. 모델 목록 조회는 추론을 실행하지 않으며, 목록에 있어도 계정별 실제 추론 성공은 별도 검증 대상이다.
+- 모델: `FIREWORKS_MODEL` env (기본 `accounts/fireworks/models/glm-5p3-flash`, 2026-11-28 확인). Actions에서는 같은 이름의 Repository variable로 변경할 수 있다. **서버리스로 제공되는 모델만 쓸 수 있다** — 모델 페이지의 `Serverless: Supported`를 확인하고, 목록 API에 있어도 서버리스 미지원이면 404 `NOT_FOUND`가 난다(`gpt-oss-120b`가 이렇게 퇴역해 2026-11-22부터 태그가 붙지 않았다).
 - 화이트리스트(`ALL_FILTER_TAGS`)를 JSON 스키마와 프롬프트에서 공유한다. `reasoning_effort: low`, 최대 출력 2048토큰, 요청부터 응답 본문까지 30초 제한을 적용한다. 429/5xx만 최대 3회 시도하고 기존 5초·10초 대기를 유지한다.
 - 정상 종료(`finish_reason: stop`)와 문자열 배열 JSON을 검증한다. 빈 본문·누락된 응답·잘린 JSON·허용 태그가 전혀 없는 응답은 오류이며 비기술 판정에 사용하지 않는다. 쉼표/줄바꿈 파싱으로 복구하지 않는다.
 - **빈 배열 응답은 "비기술 글" 판정 신호**로도 쓰인다 — 크롤러가 개인 블로그 글의 수집 제외 여부를 이 신호로 결정한다 (`scripts/rss/filter.js`의 `isNonTechClassification`). 프롬프트의 빈 배열 규칙을 수정할 때는 이 부작용을 반드시 고려할 것. 회고/커리어/문화 글은 기술 글로 취급한다는 규칙도 프롬프트에 있다.
