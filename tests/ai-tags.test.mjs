@@ -27,7 +27,7 @@ function loadClassifier({
   missingKey = false,
   stall = null,
 } = {}) {
-  const calls = { requests: [], timers: [], cancelled: 0 };
+  const calls = { requests: [], timers: [], cancelled: 0, warns: [] };
   const exports = {};
   vm.runInNewContext(source, {
     exports,
@@ -37,7 +37,12 @@ function loadClassifier({
         ...env,
       },
     },
-    console: { warn() {}, error() {} },
+    console: {
+      warn(...args) {
+        calls.warns.push(args.join(" "));
+      },
+      error() {},
+    },
     AbortController,
     setTimeout(callback, ms) {
       const timer = { callback, ms, cleared: false };
@@ -111,7 +116,7 @@ test("서버리스 모델과 JSON 스키마로 요청하고 정상 태그를 반
   assert.deepEqual([...result.tags], ["react", "web"]);
   assert.equal(result.nonTech, false);
   const request = h.calls.requests[0];
-  assert.equal(request.body.model, "accounts/fireworks/models/gpt-oss-120b");
+  assert.equal(request.body.model, "accounts/fireworks/models/glm-5p3-flash");
   assert.equal(request.body.max_tokens, 2048);
   assert.equal(request.body.reasoning_effort, "low");
   assert.equal(request.body.response_format.type, "json_schema");
@@ -188,6 +193,20 @@ test("404·401은 재시도하지 않고 원인을 보고한다", async () => {
     assert.equal(h.calls.requests.length, 1);
     assert.equal(h.calls.cancelled, 1);
   }
+});
+
+test("404면 서버리스 모델 확인 안내를 한 번만 남긴다", async () => {
+  const h = loadClassifier({
+    replies: [
+      { status: 404, error: "Model not found" },
+      { status: 404, error: "Model not found" },
+    ],
+  });
+  await h.classifyArticleTags(article);
+  await h.classifyArticleTags(article);
+  assert.equal(h.calls.warns.length, 1);
+  assert.match(h.calls.warns[0], /Serverless/);
+  assert.match(h.calls.warns[0], /accounts\/fireworks\/models\/glm-5p3-flash/);
 });
 
 test("429·5xx 재시도는 최대 세 번이고 기존 대기 시간을 유지한다", async () => {

@@ -4,9 +4,15 @@ import { ALL_FILTER_TAGS } from "../lib/tag-data.js";
 dotenv.config();
 
 const FIREWORKS_API_KEY = process.env.FIREWORKS_API_KEY;
-const FIREWORKS_MODEL =
-  process.env.FIREWORKS_MODEL || "accounts/fireworks/models/gpt-oss-120b";
+// 서버리스 추론에서 실제로 호출 가능한 모델만 기본값으로 쓴다.
+// gpt-oss-120b는 서버리스 제공이 끝나(모델 페이지 Serverless: Not Supported)
+// 2026-11-22부터 모든 태그 요청이 404 NOT_FOUND로 실패했다.
+// 모델을 바꿀 때는 모델 페이지의 Serverless 지원과 실제 추론 성공을 함께 확인한다.
+const DEFAULT_FIREWORKS_MODEL = "accounts/fireworks/models/glm-5p3-flash";
+const FIREWORKS_MODEL = process.env.FIREWORKS_MODEL || DEFAULT_FIREWORKS_MODEL;
+const MODEL_404_HINT = `모델 ${FIREWORKS_MODEL}이(가) 서버리스로 제공되지 않을 수 있습니다. 모델 페이지의 Serverless 지원 여부를 확인하고 FIREWORKS_MODEL로 교체하세요.`;
 let warnedMissingKey = false;
+let warnedModelNotFound = false;
 const RETRY_STATUSES = [429, 500, 502, 503, 504];
 const RETRY_BASE_MS = parseInt(process.env.TAG_RETRY_BASE_MS || "5000", 10); // 기본 5초
 const REQUEST_TIMEOUT_MS = 30000;
@@ -117,6 +123,12 @@ async function generateWithFireworks(prompt) {
       if (RETRY_STATUSES.includes(response.status) && attempt < maxAttempts) {
         retryStatus = response.status;
       } else {
+        // 404는 재시도로 풀리지 않고, 서버리스에서 내려간 모델을 가리키는 경우가 많다.
+        // 글마다 같은 안내가 반복되지 않도록 실행당 한 번만 남긴다.
+        if (response.status === 404 && !warnedModelNotFound) {
+          warnedModelNotFound = true;
+          console.warn(`⚠️ ${MODEL_404_HINT}`);
+        }
         throw new Error(
           `Fireworks 요청 실패 (status=${response.status}): ${body}`,
         );

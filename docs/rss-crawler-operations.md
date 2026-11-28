@@ -41,7 +41,9 @@ AI 분류는 기존 요청 간 지연을 유지한다. `--max-ai-articles`는 �
 
 RSS 요청은 본문까지 읽은 후 XML을 파싱한다. 리다이렉트·HTTP 오류·시간 초과에서는 응답을 취소하고 정리한다. RSS와 썸네일 요청은 각각 본문 읽기를 포함해 10초 제한이며 리다이렉트는 최대 5회다. 썸네일 웹 요청은 중복·규칙 제외·기간·건수 제한과 AI 비기술 판정을 통과한 신규 저장 후보에만 수행한다. 썸네일 요청 실패는 기존 RSS 이미지로 대체하거나 이미지 없이 저장한다.
 
-Fireworks 기본 모델은 `accounts/fireworks/models/gpt-oss-120b`다. 로컬 `FIREWORKS_MODEL` 또는 GitHub Repository variable `FIREWORKS_MODEL`로 재정의할 수 있다. 기본 모델은 2026-10-09에 [공식 서버리스 모델 페이지](https://fireworks.ai/models/fireworks/gpt-oss-120b)와 모델 목록 API에서 확인했다. 목록 조회는 추론 검증과 다르다.
+Fireworks 기본 모델은 `accounts/fireworks/models/glm-5p3-flash`다. 로컬 `FIREWORKS_MODEL` 또는 GitHub Repository variable `FIREWORKS_MODEL`로 재정의할 수 있다. 2026-11-28에 [모델 페이지](https://fireworks.ai/models/fireworks/glm-5p3-flash)에서 `Serverless: Supported`·함수 호출 지원·1,040k 컨텍스트를, [공식 quickstart](https://docs.fireworks.ai/getting-started/quickstart)의 JSON 스키마 예제에서 이 모델을 확인했다.
+
+모델은 **서버리스로 제공되는 것만** 골라야 한다. 이전 기본값 `accounts/fireworks/models/gpt-oss-120b`는 서버리스 제공이 중단되어(같은 모델 페이지 `Serverless: Not Supported`, 온디맨드 배포 전용) 2026-11-22부터 태그 요청이 모두 `status=404 NOT_FOUND "Model not found, inaccessible, and/or not deployed"`로 실패했다. 모델 목록 API는 서버리스 미지원 모델도 계속 나열하므로 목록 존재 여부는 추론 가능 여부의 근거가 되지 않는다. 모델 페이지의 Serverless 지원 표시와 실제 추론 성공을 함께 확인한다.
 
 AI 요청은 본문 읽기까지 30초로 제한한다. JSON 스키마와 허용 태그 목록을 공유하고, 정상 완료된 문자열 배열만 사용한다. 빈 본문·잘린 응답·잘못된 JSON은 오류로 기록하며 비기술 글로 제외하지 않는다. 정상 JSON `[]`만 비기술 판정으로 인정한다.
 
